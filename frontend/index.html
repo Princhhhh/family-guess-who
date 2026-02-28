@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Family Guess Who - נחש מי משפחתי</title>
     <style>
       * {
@@ -16,6 +16,13 @@
         direction: rtl;
         background: #f0f4f8;
         min-height: 100vh;
+        /* Prevent bounce/overscroll on iOS */
+        overscroll-behavior: none;
+        -webkit-text-size-adjust: 100%;
+      }
+      /* Prevent iOS zoom on input focus */
+      input, textarea, select {
+        font-size: 16px !important;
       }
     </style>
   </head>
