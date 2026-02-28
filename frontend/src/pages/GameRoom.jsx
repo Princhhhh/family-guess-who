@@ -34,6 +34,8 @@ export default function GameRoom() {
 
   const [phase,          setPhase]          = useState(playerNum === '1' ? 'waiting' : 'ready')
   const [flipped,        setFlipped]        = useState({})
+  // Turn system: player1 always goes first
+  const [myTurn,         setMyTurn]         = useState(playerNum === '1')
   const [showSecret,     setShowSecret]     = useState(false)
   const [secretTimer,    setSecretTimer]    = useState(3)
   const [gameResult,     setGameResult]     = useState(null)
@@ -57,12 +59,14 @@ export default function GameRoom() {
     socket.connect()
     socket.emit('join_room', { code, playerId })
 
-    socket.on('game_started', ({ characters: chars, opponentName: oName }) => {
+    socket.on('game_started', ({ characters: chars, opponentName: oName, firstTurn }) => {
       setCharacters(chars)
       sessionStorage.setItem('characters', JSON.stringify(chars))
       setOpponentConnected(true)
       setPhase('ready')
       if (oName) { setOpponentName(oName); sessionStorage.setItem('opponentName', oName) }
+      // firstTurn is player1's id — set myTurn based on who we are
+      if (firstTurn) setMyTurn(firstTurn === playerId)
       addChat({ kind: 'system', text: `${oName ? oName + ' הצטרף' : 'היריב הצטרף'}! המשחק מתחיל 🎮` })
     })
     socket.on('receive_question', ({ question }) => {
@@ -73,6 +77,9 @@ export default function GameRoom() {
       setPendingQuestion(null)
       addChat({ kind: 'answer', question, answer })
     })
+    socket.on('turn_changed', ({ currentTurn }) => {
+      setMyTurn(currentTurn === playerId)
+    })
     socket.on('game_over', (r) => {
       setGameResult(r); setPhase('gameOver')
       setGuessMode(false); setGuessConfirm(null)
@@ -80,7 +87,7 @@ export default function GameRoom() {
     socket.on('opponent_disconnected', () => setDisconnected(true))
 
     return () => {
-      ['game_started','receive_question','question_answered','game_over','opponent_disconnected']
+      ['game_started','receive_question','question_answered','turn_changed','game_over','opponent_disconnected']
         .forEach(e => socket.off(e))
       socket.disconnect()
     }
@@ -102,8 +109,8 @@ export default function GameRoom() {
   }
 
   const handleSendQuestion = () => {
-    const q = questionInput.trim(); if (!q) return
-    socket.emit('send_question', { code, question: q })
+    const q = questionInput.trim(); if (!q || !myTurn) return
+    socket.emit('send_question', { code, playerId, question: q })
     addChat({ kind: 'my_question', text: q })
     setQuestionInput('')
   }
@@ -342,7 +349,36 @@ export default function GameRoom() {
           ),
           minHeight: 0,
         }}>
-          {!isMobile && (
+          {/* Turn indicator — always shown at top of chat */}
+          {phase === 'playing' && (
+            <div style={{
+              padding: '7px 12px',
+              background: pendingQuestion
+                ? '#fff8e1'
+                : myTurn ? '#f0fdf4' : '#f8fafc',
+              borderBottom: `2px solid ${pendingQuestion ? '#ffe082' : myTurn ? '#86efac' : '#e2e8f0'}`,
+              display: 'flex', alignItems: 'center', gap: 6,
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: isMobile ? '0.7rem' : '0.75rem' }}>
+                {pendingQuestion ? '❓' : myTurn ? '📍' : '⏳'}
+              </span>
+              <span style={{
+                fontWeight: 700,
+                fontSize: isMobile ? '0.72rem' : '0.78rem',
+                color: pendingQuestion ? '#92400e' : myTurn ? '#15803d' : '#64748b',
+                fontFamily: 'Rubik, sans-serif',
+              }}>
+                {pendingQuestion
+                  ? 'ענה כן או לא 👆'
+                  : myTurn
+                    ? 'התור שלך — שאל שאלה!'
+                    : `התור של ${opponentName || 'היריב'}...`}
+              </span>
+            </div>
+          )}
+
+          {!isMobile && phase !== 'playing' && (
             <div style={{ padding: '10px 14px', fontWeight: 'bold', color: '#4a154b', borderBottom: '1px solid #eee', fontSize: '0.88rem' }}>
               💬 שאלות ותשובות
             </div>
@@ -352,7 +388,7 @@ export default function GameRoom() {
           <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '6px 10px' : '10px 12px', minHeight: 0 }}>
             {chatLog.length === 0 && (
               <div style={{ color: '#ccc', textAlign: 'center', marginTop: 12, fontSize: '0.8rem' }}>
-                שאל שאלת כן/לא 👇
+                {myTurn ? 'שאל שאלת כן/לא 👇' : `ממתין לשאלה של ${opponentName || 'היריב'}...`}
               </div>
             )}
             {chatLog.map(msg => <ChatMsg key={msg.id} msg={msg} isMobile={isMobile} />)}
@@ -375,18 +411,28 @@ export default function GameRoom() {
           {/* Input */}
           <div style={{ padding: isMobile ? '7px 10px' : '9px 12px', borderTop: '1px solid #eee', display: 'flex', gap: 7, flexShrink: 0 }}>
             <input
-              style={{ flex: 1, padding: '8px 10px', fontSize: '0.88rem', border: '2px solid #e0e0e0', borderRadius: 8, outline: 'none', direction: 'rtl' }}
+              style={{
+                flex: 1, padding: '8px 10px', fontSize: '0.88rem',
+                border: `2px solid ${myTurn && !pendingQuestion ? '#c4b5fd' : '#e0e0e0'}`,
+                borderRadius: 8, outline: 'none', direction: 'rtl',
+                background: (!myTurn || pendingQuestion) ? '#f8fafc' : 'white',
+                transition: 'border-color 0.2s, background 0.2s',
+              }}
               value={questionInput}
               onChange={e => setQuestionInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSendQuestion()}
-              placeholder={pendingQuestion ? 'ממתין לתשובה...' : 'שאל שאלה...'}
-              disabled={!!pendingQuestion}
+              placeholder={
+                pendingQuestion ? 'ממתין לתשובה...'
+                : !myTurn ? `התור של ${opponentName || 'היריב'}...`
+                : 'שאל שאלה...'
+              }
+              disabled={!!pendingQuestion || !myTurn}
               maxLength={100}
             />
             <button
-              style={{ ...S.btn, padding: '8px 12px', fontSize: '0.85rem', opacity: (pendingQuestion || !questionInput.trim()) ? 0.5 : 1 }}
+              style={{ ...S.btn, padding: '8px 12px', fontSize: '0.85rem', opacity: (pendingQuestion || !myTurn || !questionInput.trim()) ? 0.4 : 1 }}
               onClick={handleSendQuestion}
-              disabled={!!pendingQuestion || !questionInput.trim()}
+              disabled={!!pendingQuestion || !myTurn || !questionInput.trim()}
             >שלח</button>
           </div>
         </div>

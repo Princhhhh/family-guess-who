@@ -225,10 +225,14 @@ app.post('/api/rooms/join', (req, res) => {
     opponentName: room.player1_name || null,
   });
 
-  // Notify player1 that game started — include player2's name
+  // Player1 always goes first — store in roomTurns
+  roomTurns[code] = room.player1_id;
+
+  // Notify both players that game started — include whose turn it is
   io.to(`room_${code}`).emit('game_started', {
     characters,
     opponentName: playerName,
+    firstTurn: room.player1_id,
     message: 'השחקן השני הצטרף! המשחק מתחיל!'
   });
 });
@@ -247,6 +251,8 @@ app.get('/api/rooms/:code', (req, res) => {
 // Track socket -> room/player mapping
 const socketToRoom = {};
 const socketToPlayer = {};
+// Track whose turn it is per room (playerId)
+const roomTurns = {};
 
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
@@ -260,13 +266,27 @@ io.on('connection', (socket) => {
   });
 
   // Player sends a yes/no question to opponent
-  socket.on('send_question', ({ code, question }) => {
+  socket.on('send_question', ({ code, playerId, question }) => {
+    // Only allow if it's this player's turn
+    if (roomTurns[code] && roomTurns[code] !== playerId) return;
     socket.to(`room_${code}`).emit('receive_question', { question });
   });
 
-  // Player answers yes/no — broadcast to both
+  // Player answers yes/no — broadcast to both, then switch turn
   socket.on('answer_question', ({ code, question, answer }) => {
     io.to(`room_${code}`).emit('question_answered', { question, answer });
+
+    // Switch turn to the player who asked (the one who is NOT the answerer)
+    const room = db.prepare('SELECT * FROM rooms WHERE code = ?').get(code);
+    if (room) {
+      const answererSocket = socket.id;
+      // The asker was whoever's turn it was before
+      const askerTurn = roomTurns[code];
+      // After answer, switch to the OTHER player (the asker's turn is done, now it's the answerer's turn)
+      const nextTurn = askerTurn === room.player1_id ? room.player2_id : room.player1_id;
+      roomTurns[code] = nextTurn;
+      io.to(`room_${code}`).emit('turn_changed', { currentTurn: nextTurn });
+    }
   });
 
   // Final guess: player clicks a character image (by ID, not name)
