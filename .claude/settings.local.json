@@ -13,7 +13,8 @@
       "Bash(git branch -M main)",
       "Bash(git push -u origin main)",
       "Bash(git commit -m \"Fix game flow: private boards, Q&A chat, click-to-guess\")",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(git commit -m \"Admin: bulk upload - select many images, fill names, save all\")"
     ]
   }
 }
