@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(npm cache clean --force)",
+      "Bash(npm install --cache /tmp/npm-cache)",
+      "Bash(node -e \"require\\(''./database.js''\\); console.log\\(''DB OK''\\)\")",
+      "Bash(npm run build)",
+      "Bash(git init)",
+      "Bash(git add .)",
+      "Bash(git commit -m \"Family Guess Who - initial\")"
+    ]
+  }
+}
