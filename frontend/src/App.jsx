@@ -5,6 +5,7 @@ import GameRoom   from './pages/GameRoom'
 import JoinRoom   from './pages/JoinRoom'
 import AdminLogin from './pages/AdminLogin'
 import AdminPanel from './pages/AdminPanel'
+import Leaderboard from './pages/Leaderboard'
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
       <Route path="/join/:code"    element={<JoinRoom />} />
       <Route path="/admin"         element={<AdminLogin />} />
       <Route path="/admin/panel"   element={<AdminPanel />} />
+      <Route path="/leaderboard"   element={<Leaderboard />} />
     </Routes>
   )
 }

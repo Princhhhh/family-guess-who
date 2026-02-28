@@ -8,16 +8,23 @@ export default function HomePage() {
   const [joinCode, setJoinCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
+  const [username, setUsername] = useState(() => sessionStorage.getItem('playerName') || '')
+
+  const saveName = (val) => {
+    setUsername(val)
+    sessionStorage.setItem('playerName', val.trim())
+  }
 
   const handleCreate = async () => {
     setLoading(true); setError('')
     try {
-      const res = await axios.post('/api/rooms')
+      const res = await axios.post('/api/rooms', { username: username.trim() || undefined })
       const { code, playerId, characters, secretCharacter } = res.data
       sessionStorage.setItem('playerId', playerId)
       sessionStorage.setItem('playerNum', '1')
       sessionStorage.setItem('characters', JSON.stringify(characters))
       sessionStorage.setItem('secretCharacter', JSON.stringify(secretCharacter))
+      sessionStorage.removeItem('opponentName')
       navigate(`/room/${code}`)
     } catch (e) {
       setError(e.response?.data?.error || 'שגיאה ביצירת חדר')
@@ -28,11 +35,12 @@ export default function HomePage() {
     if (joinCode.length !== 4) { setError('הכנס קוד בן 4 ספרות'); return }
     setLoading(true); setError('')
     try {
-      const res = await axios.post('/api/rooms/join', { code: joinCode })
+      const res = await axios.post('/api/rooms/join', { code: joinCode, username: username.trim() || undefined })
       sessionStorage.setItem('playerId', res.data.playerId)
       sessionStorage.setItem('playerNum', '2')
       sessionStorage.setItem('characters', JSON.stringify(res.data.characters))
       sessionStorage.setItem('secretCharacter', JSON.stringify(res.data.secretCharacter))
+      if (res.data.opponentName) sessionStorage.setItem('opponentName', res.data.opponentName)
       navigate(`/room/${joinCode}`)
     } catch (e) {
       setError(e.response?.data?.error || 'שגיאה בהצטרפות')
@@ -45,9 +53,21 @@ export default function HomePage() {
 
       <div style={S.card} className="fade-in">
         <div className="float" style={{ fontSize: '3.5rem', lineHeight: 1, marginBottom: 8 }}>🃏</div>
-        <h1 style={S.title} className="gold-text">נחש מי הלביא?</h1>
+        <h1 style={S.title} className="gold-text">נחש לביא</h1>
         <p style={S.subtitle}>משחק הדמויות המסתורית</p>
         <div style={S.divider} />
+
+        {/* Username input */}
+        <div style={{ marginBottom: 16 }}>
+          <input
+            style={S.nameInput}
+            type="text"
+            placeholder="השם שלך (אופציונלי)"
+            value={username}
+            onChange={e => saveName(e.target.value)}
+            maxLength={20}
+          />
+        </div>
 
         {!mode && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -84,7 +104,11 @@ export default function HomePage() {
           </div>
         )}
 
-        <button style={S.adminLink} onClick={() => navigate('/admin')}>כניסת מנהל</button>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 16 }}>
+          <button style={S.bottomLink} onClick={() => navigate('/leaderboard')}>🏅 לידרבורד</button>
+          <span style={{ color: '#d1d5db', fontSize: '0.78rem', alignSelf: 'center' }}>|</span>
+          <button style={S.adminLink} onClick={() => navigate('/admin')}>כניסת מנהל</button>
+        </div>
       </div>
 
       {/* Floating mini cards decoration */}
@@ -119,6 +143,14 @@ const S = {
   subtitle: { color: '#6b7280', fontSize: '0.95rem', fontWeight: 500, marginBottom: 0 },
   divider:  { height: 2, background: 'linear-gradient(90deg, transparent, #e0e7ff, transparent)', margin: '20px 0', borderRadius: 2 },
 
+  nameInput: {
+    display: 'block', width: '100%', padding: '11px 16px',
+    border: '2px solid #e0e7ff', borderRadius: 14,
+    fontSize: '0.95rem', fontFamily: 'Rubik, sans-serif', color: '#312e81',
+    textAlign: 'center', outline: 'none', direction: 'rtl',
+    boxSizing: 'border-box',
+  },
+
   btnPrimary: {
     display: 'block', width: '100%', padding: '14px 20px',
     background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
@@ -144,7 +176,8 @@ const S = {
     color: '#312e81', fontFamily: 'Rubik, sans-serif',
   },
   error: { color: '#dc2626', background: '#fef2f2', borderRadius: 10, padding: '8px 12px', fontSize: '0.88rem', fontWeight: 500 },
-  adminLink: { display: 'block', marginTop: 20, color: '#d1d5db', fontSize: '0.78rem', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'Rubik, sans-serif' },
+  bottomLink: { background: 'none', border: 'none', color: '#a78bfa', fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'Rubik, sans-serif', fontWeight: 600 },
+  adminLink: { background: 'none', border: 'none', color: '#d1d5db', fontSize: '0.78rem', cursor: 'pointer', fontFamily: 'Rubik, sans-serif' },
 
   decorRow: { position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 10, zIndex: 0 },
   miniCard: { width: 40, height: 52, background: 'rgba(255,255,255,0.12)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', boxShadow: '0 4px 12px rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.2)' },

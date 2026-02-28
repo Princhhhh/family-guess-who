@@ -15,7 +15,9 @@
       "Bash(git commit -m \"Fix game flow: private boards, Q&A chat, click-to-guess\")",
       "Bash(git push)",
       "Bash(git commit -m \"Admin: bulk upload - select many images, fill names, save all\")",
-      "Bash(git commit -m \"Redesign: Rubik font, game aesthetic, URL sharing, rename to הלביא\")"
+      "Bash(git commit -m \"Redesign: Rubik font, game aesthetic, URL sharing, rename to הלביא\")",
+      "Bash(git add -A)",
+      "Bash(git commit:*)"
     ]
   }
 }

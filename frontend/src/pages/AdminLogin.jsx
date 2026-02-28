@@ -25,7 +25,7 @@ export default function AdminLogin() {
       <div style={S.card} className="fade-in">
         <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🔐</div>
         <h2 style={S.title}>פאנל מנהל</h2>
-        <p style={S.sub}>נחש מי הלביא</p>
+        <p style={S.sub}>נחש לביא</p>
         <div style={S.divider} />
         <input
           style={S.input}

@@ -19,8 +19,9 @@ export default function GameRoom() {
   const navigate  = useNavigate()
   const isMobile  = useIsMobile()
 
-  const playerId  = sessionStorage.getItem('playerId')
-  const playerNum = sessionStorage.getItem('playerNum')
+  const playerId   = sessionStorage.getItem('playerId')
+  const playerNum  = sessionStorage.getItem('playerNum')
+  const myName     = sessionStorage.getItem('playerName') || ''
 
   const [characters, setCharacters] = useState(() => {
     try { return JSON.parse(sessionStorage.getItem('characters') || '[]') } catch { return [] }
@@ -29,8 +30,16 @@ export default function GameRoom() {
     try { return JSON.parse(sessionStorage.getItem('secretCharacter') || 'null') } catch { return null }
   })
 
+  const [opponentName, setOpponentName] = useState(() => sessionStorage.getItem('opponentName') || '')
+
   const [phase,          setPhase]          = useState(playerNum === '1' ? 'waiting' : 'ready')
-  const [flipped,        setFlipped]        = useState({})
+  // Pre-blur own secret character from the start
+  const [flipped,        setFlipped]        = useState(() => {
+    try {
+      const secret = JSON.parse(sessionStorage.getItem('secretCharacter') || 'null')
+      return secret ? { [secret.id]: true } : {}
+    } catch { return {} }
+  })
   const [showSecret,     setShowSecret]     = useState(false)
   const [secretTimer,    setSecretTimer]    = useState(3)
   const [gameResult,     setGameResult]     = useState(null)
@@ -54,12 +63,13 @@ export default function GameRoom() {
     socket.connect()
     socket.emit('join_room', { code, playerId })
 
-    socket.on('game_started', ({ characters: chars }) => {
+    socket.on('game_started', ({ characters: chars, opponentName: oName }) => {
       setCharacters(chars)
       sessionStorage.setItem('characters', JSON.stringify(chars))
       setOpponentConnected(true)
       setPhase('ready')
-      addChat({ kind: 'system', text: 'היריב הצטרף! המשחק מתחיל 🎮' })
+      if (oName) { setOpponentName(oName); sessionStorage.setItem('opponentName', oName) }
+      addChat({ kind: 'system', text: `${oName ? oName + ' הצטרף' : 'היריב הצטרף'}! המשחק מתחיל 🎮` })
     })
     socket.on('receive_question', ({ question }) => {
       setPendingQuestion(question)
@@ -110,9 +120,11 @@ export default function GameRoom() {
 
   const handleCardClick = useCallback((char) => {
     if (phase !== 'playing') return
+    // Can't toggle own secret character — it's permanently blurred
+    if (secretCharacter && char.id === secretCharacter.id) return
     if (guessMode) { setGuessConfirm(char); return }
     setFlipped(prev => ({ ...prev, [char.id]: !prev[char.id] }))
-  }, [phase, guessMode])
+  }, [phase, guessMode, secretCharacter])
 
   const handleConfirmGuess = () => {
     if (!guessConfirm) return
@@ -152,7 +164,10 @@ export default function GameRoom() {
               </div>
             )}
           </div>
-          <button style={S.btn} onClick={() => navigate('/')}>🏠 דף הבית</button>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button style={S.btn} onClick={() => navigate('/')}>🏠 דף הבית</button>
+            <button style={{ ...S.btn, background: 'linear-gradient(135deg, #f59e0b, #d97706)' }} onClick={() => navigate('/leaderboard')}>🏅 לידרבורד</button>
+          </div>
         </div>
       </div>
     )
@@ -160,7 +175,7 @@ export default function GameRoom() {
 
   // ══════════════════ WAITING ══════════════════
   if (phase === 'waiting') return (
-    <WaitingScreen code={code} />
+    <WaitingScreen code={code} myName={myName} />
   )
 
   // ══════════════════ REVEAL SECRET ══════════════════
@@ -178,7 +193,7 @@ export default function GameRoom() {
         <div style={S.modal}>
           <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🎴</div>
           <h2 style={{ color: '#4a154b', marginBottom: 8 }}>
-            {opponentConnected ? 'שני השחקנים מחוברים!' : 'מחכים...'}
+            {opponentConnected ? (opponentName ? `משחקים נגד ${opponentName}!` : 'שני השחקנים מחוברים!') : 'מחכים...'}
           </h2>
           <p style={{ color: '#666', marginBottom: 24, fontSize: '0.9rem' }}>
             לחץ לראות את הדמות הסודית שלך — 3 שניות בלבד!
@@ -198,7 +213,8 @@ export default function GameRoom() {
       {/* Header */}
       <div style={S.header}>
         <span style={{ fontWeight: 800, color: 'white', fontSize: isMobile ? '0.9rem' : '1rem', fontFamily: 'Rubik, sans-serif' }}>
-          🃏 נחש מי הלביא?
+          🃏 נחש לביא
+          {opponentName ? <span style={{ fontSize: '0.75rem', opacity: 0.75, fontWeight: 400, marginRight: 8 }}>נגד {opponentName}</span> : null}
         </span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <span style={S.codeBadge}>{code}</span>
@@ -239,7 +255,6 @@ export default function GameRoom() {
           overflowY: 'auto',
           padding: isMobile ? '8px' : '12px',
           minHeight: 0,
-          // On mobile, don't let board grow infinitely — cap it so chat stays visible
           maxHeight: isMobile ? 'calc(100dvh - 260px)' : undefined,
         }}>
           <div style={{
@@ -249,6 +264,7 @@ export default function GameRoom() {
           }}>
             {characters.map(char => {
               const isFlipped = !!flipped[char.id]
+              const isMySecret = secretCharacter && char.id === secretCharacter.id
               return (
                 <div
                   key={char.id}
@@ -257,13 +273,14 @@ export default function GameRoom() {
                     position: 'relative',
                     borderRadius: 8,
                     overflow: 'hidden',
-                    cursor: phase === 'playing' ? 'pointer' : 'default',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.13)',
-                    outline: guessMode ? '2px dashed #ff9800' : '2px solid transparent',
+                    cursor: phase === 'playing' && !isMySecret ? 'pointer' : 'default',
+                    boxShadow: isMySecret
+                      ? '0 0 0 2px #7c3aed, 0 2px 6px rgba(0,0,0,0.2)'
+                      : '0 2px 6px rgba(0,0,0,0.13)',
+                    outline: guessMode && !isFlipped && !isMySecret ? '2px dashed #ff9800' : '2px solid transparent',
                     transition: 'filter 0.35s, transform 0.15s, outline 0.15s',
-                    // Blur entire card when eliminated
                     filter: isFlipped ? 'blur(4px) brightness(0.75) saturate(0.4)' : 'none',
-                    transform: guessMode && !isFlipped ? 'scale(1.03)' : 'scale(1)',
+                    transform: guessMode && !isFlipped && !isMySecret ? 'scale(1.03)' : 'scale(1)',
                   }}
                 >
                   <img
@@ -283,6 +300,17 @@ export default function GameRoom() {
                   }}>
                     {char.name}
                   </div>
+                  {/* "זה אתה" badge on own secret */}
+                  {isMySecret && (
+                    <div style={{
+                      position: 'absolute', top: 3, right: 3,
+                      background: '#7c3aed', color: 'white',
+                      fontSize: '0.55rem', fontWeight: 'bold',
+                      padding: '1px 5px', borderRadius: 6, zIndex: 3,
+                    }}>
+                      אתה
+                    </div>
+                  )}
                 </div>
               )
             })}
@@ -294,14 +322,12 @@ export default function GameRoom() {
           display: 'flex',
           flexDirection: 'column',
           background: 'white',
-          // Mobile: fixed height at bottom | Desktop: sidebar
           ...(isMobile
             ? { flexShrink: 0, height: 220, borderTop: '2px solid #eee' }
             : { width: 300, minWidth: 260, borderRight: '1px solid #eee' }
           ),
           minHeight: 0,
         }}>
-          {/* Chat title — desktop only */}
           {!isMobile && (
             <div style={{ padding: '10px 14px', fontWeight: 'bold', color: '#4a154b', borderBottom: '1px solid #eee', fontSize: '0.88rem' }}>
               💬 שאלות ותשובות
@@ -410,7 +436,7 @@ function ChatMsg({ msg, isMobile }) {
 }
 
 // ══════════════════ WAITING SCREEN ══════════════════
-function WaitingScreen({ code }) {
+function WaitingScreen({ code, myName }) {
   const [copied, setCopied] = useState(false)
   const shareUrl = `${window.location.origin}/join/${code}`
 
@@ -420,13 +446,12 @@ function WaitingScreen({ code }) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // fallback: select text
       const el = document.getElementById('share-url-input')
       el?.select()
     }
   }
 
-  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`בוא נשחק נחש מי הלביא! לחץ כאן להצטרף: ${shareUrl}`)}`
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`בוא נשחק נחש לביא! לחץ כאן להצטרף: ${shareUrl}`)}`
 
   return (
     <div style={{
@@ -438,6 +463,7 @@ function WaitingScreen({ code }) {
         <h2 style={{ color: '#312e81', fontFamily: 'Rubik, sans-serif', fontWeight: 800, marginBottom: 6 }}>
           ממתין ליריב...
         </h2>
+        {myName && <p style={{ color: '#7c3aed', fontWeight: 700, fontSize: '0.9rem', marginBottom: 4, fontFamily: 'Rubik, sans-serif' }}>שלום, {myName}!</p>}
         <p style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: 24, fontFamily: 'Rubik, sans-serif' }}>
           שלח את הקישור לחבר שישחק נגדך
         </p>

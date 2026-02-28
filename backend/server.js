@@ -115,6 +115,21 @@ app.get('/api/characters/count', (req, res) => {
 });
 
 // =====================
+// LEADERBOARD
+// =====================
+
+app.get('/api/leaderboard', (req, res) => {
+  const users = db.prepare(`
+    SELECT username, wins, losses, games
+    FROM users
+    WHERE games > 0
+    ORDER BY wins DESC, losses ASC, games ASC
+    LIMIT 20
+  `).all();
+  res.json(users);
+});
+
+// =====================
 // ROOM ROUTES
 // =====================
 
@@ -131,8 +146,18 @@ function shuffleArray(arr) {
   return a;
 }
 
+// Upsert user helper
+function upsertUser(username) {
+  if (!username?.trim()) return;
+  db.prepare(`
+    INSERT INTO users (username, games) VALUES (?, 1)
+    ON CONFLICT(username) DO UPDATE SET games = games + 1
+  `).run(username.trim());
+}
+
 // Create room
 app.post('/api/rooms', (req, res) => {
+  const { username } = req.body;
   const charCount = db.prepare('SELECT COUNT(*) as count FROM characters').get().count;
   if (charCount < 24) {
     return res.status(400).json({ error: `נדרשות לפחות 24 דמויות. יש כרגע ${charCount}.` });
@@ -147,6 +172,7 @@ app.post('/api/rooms', (req, res) => {
   } while (db.prepare('SELECT id FROM rooms WHERE code = ? AND status != ?').get(code, 'finished'));
 
   const playerId = uuidv4();
+  const playerName = username?.trim() || null;
 
   // Select 24 random characters
   const allChars = db.prepare('SELECT * FROM characters').all();
@@ -156,16 +182,19 @@ app.post('/api/rooms', (req, res) => {
   const secret1 = selected[Math.floor(Math.random() * 24)];
 
   db.prepare(`
-    INSERT INTO rooms (code, player1_id, characters, player1_secret_id, status)
-    VALUES (?, ?, ?, ?, 'waiting')
-  `).run(code, playerId, JSON.stringify(selected), secret1.id);
+    INSERT INTO rooms (code, player1_id, player1_name, characters, player1_secret_id, status)
+    VALUES (?, ?, ?, ?, ?, 'waiting')
+  `).run(code, playerId, playerName, JSON.stringify(selected), secret1.id);
 
-  res.json({ code, playerId, characters: selected, secretCharacter: secret1 });
+  // Register user
+  upsertUser(playerName);
+
+  res.json({ code, playerId, characters: selected, secretCharacter: secret1, playerName });
 });
 
 // Join room
 app.post('/api/rooms/join', (req, res) => {
-  const { code } = req.body;
+  const { code, username } = req.body;
   const room = db.prepare('SELECT * FROM rooms WHERE code = ?').get(code);
 
   if (!room) return res.status(404).json({ error: 'חדר לא נמצא' });
@@ -173,24 +202,33 @@ app.post('/api/rooms/join', (req, res) => {
   if (room.player2_id) return res.status(400).json({ error: 'החדר כבר מלא' });
 
   const playerId = uuidv4();
+  const playerName = username?.trim() || null;
   const characters = JSON.parse(room.characters);
 
-  // Pick a different secret for player2 (can be same character, that's fine)
-  const secret2 = characters[Math.floor(Math.random() * 24)];
+  // Pick a secret for player2 — DIFFERENT from player1's secret
+  const availableForP2 = characters.filter(c => c.id !== room.player1_secret_id);
+  const secret2 = availableForP2[Math.floor(Math.random() * availableForP2.length)];
 
   db.prepare(`
-    UPDATE rooms SET player2_id = ?, player2_secret_id = ?, status = 'playing'
+    UPDATE rooms SET player2_id = ?, player2_name = ?, player2_secret_id = ?, status = 'playing'
     WHERE id = ?
-  `).run(playerId, secret2.id, room.id);
+  `).run(playerId, playerName, secret2.id, room.id);
 
-  const updatedRoom = db.prepare('SELECT * FROM rooms WHERE id = ?').get(room.id);
-  const p1Secret = characters.find(c => c.id === room.player1_secret_id);
+  // Register user
+  upsertUser(playerName);
 
-  res.json({ code, playerId, characters, secretCharacter: secret2 });
+  res.json({
+    code,
+    playerId,
+    characters,
+    secretCharacter: secret2,
+    opponentName: room.player1_name || null,
+  });
 
-  // Notify player1 that game started
+  // Notify player1 that game started — include player2's name
   io.to(`room_${code}`).emit('game_started', {
     characters,
+    opponentName: playerName,
     message: 'השחקן השני הצטרף! המשחק מתחיל!'
   });
 });
@@ -248,6 +286,12 @@ io.on('connection', (socket) => {
     db.prepare('UPDATE rooms SET status = ?, winner = ? WHERE code = ?')
       .run('finished', winner, code);
 
+    // Update win/loss stats
+    const winnerName = winner === room.player1_id ? room.player1_name : room.player2_name;
+    const loserName  = winner === room.player1_id ? room.player2_name : room.player1_name;
+    if (winnerName) db.prepare('UPDATE users SET wins = wins + 1 WHERE username = ?').run(winnerName);
+    if (loserName)  db.prepare('UPDATE users SET losses = losses + 1 WHERE username = ?').run(loserName);
+
     const guessedChar = characters.find(c => c.id === Number(characterId));
     const correctChar  = characters.find(c => c.id === Number(opponentSecretId));
 
@@ -257,6 +301,7 @@ io.on('connection', (socket) => {
       guesser: playerId,
       guessedCharacter: guessedChar,
       correctCharacter: correctChar,
+      winnerName,
     });
   });
 
