@@ -160,14 +160,7 @@ export default function GameRoom() {
 
   // ══════════════════ WAITING ══════════════════
   if (phase === 'waiting') return (
-    <div style={S.overlay}>
-      <div style={S.modal}>
-        <div style={{ fontSize: '3rem', marginBottom: 12 }}>⏳</div>
-        <h2 style={{ color: '#4a154b', marginBottom: 16 }}>ממתין לשחקן שני...</h2>
-        <div style={S.codeBox}>{code}</div>
-        <p style={{ color: '#666', marginTop: 12, fontSize: '0.9rem' }}>שלח את הקוד ליריב שלך</p>
-      </div>
-    </div>
+    <WaitingScreen code={code} />
   )
 
   // ══════════════════ REVEAL SECRET ══════════════════
@@ -204,8 +197,8 @@ export default function GameRoom() {
 
       {/* Header */}
       <div style={S.header}>
-        <span style={{ fontWeight: 'bold', color: '#4a154b', fontSize: isMobile ? '0.9rem' : '1rem' }}>
-          👨‍👩‍👧‍👦 Family Guess Who
+        <span style={{ fontWeight: 800, color: 'white', fontSize: isMobile ? '0.9rem' : '1rem', fontFamily: 'Rubik, sans-serif' }}>
+          🃏 נחש מי הלביא?
         </span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <span style={S.codeBadge}>{code}</span>
@@ -416,15 +409,104 @@ function ChatMsg({ msg, isMobile }) {
   return null
 }
 
+// ══════════════════ WAITING SCREEN ══════════════════
+function WaitingScreen({ code }) {
+  const [copied, setCopied] = useState(false)
+  const shareUrl = `${window.location.origin}/join/${code}`
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // fallback: select text
+      const el = document.getElementById('share-url-input')
+      el?.select()
+    }
+  }
+
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`בוא נשחק נחש מי הלביא! לחץ כאן להצטרף: ${shareUrl}`)}`
+
+  return (
+    <div style={{
+      minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'linear-gradient(160deg, #1e1b4b, #312e81, #1e3a5f)', padding: 20,
+    }}>
+      <div style={{ background: 'white', borderRadius: 28, padding: '36px 28px', maxWidth: 420, width: '100%', textAlign: 'center', boxShadow: '0 24px 64px rgba(0,0,0,0.4)' }}>
+        <div className="float" style={{ fontSize: '3rem', marginBottom: 12 }}>⏳</div>
+        <h2 style={{ color: '#312e81', fontFamily: 'Rubik, sans-serif', fontWeight: 800, marginBottom: 6 }}>
+          ממתין ליריב...
+        </h2>
+        <p style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: 24, fontFamily: 'Rubik, sans-serif' }}>
+          שלח את הקישור לחבר שישחק נגדך
+        </p>
+
+        {/* Shareable URL box */}
+        <div style={{ background: '#f5f3ff', borderRadius: 14, padding: '12px 14px', marginBottom: 14, border: '2px solid #e0e7ff' }}>
+          <input
+            id="share-url-input"
+            readOnly
+            value={shareUrl}
+            style={{
+              width: '100%', background: 'none', border: 'none', outline: 'none',
+              fontSize: '0.82rem', color: '#4338ca', fontFamily: 'Rubik, sans-serif',
+              textAlign: 'center', direction: 'ltr', cursor: 'text',
+            }}
+            onFocus={e => e.target.select()}
+          />
+        </div>
+
+        {/* Copy + WhatsApp buttons */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+          <button
+            onClick={copyLink}
+            style={{
+              flex: 1, padding: '11px', borderRadius: 50, border: 'none', cursor: 'pointer',
+              background: copied ? '#16a34a' : 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+              color: 'white', fontWeight: 700, fontSize: '0.9rem',
+              fontFamily: 'Rubik, sans-serif', transition: 'background 0.3s',
+            }}
+            className={copied ? '' : 'btn-glow'}
+          >
+            {copied ? '✅ הועתק!' : '📋 העתק קישור'}
+          </button>
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              flex: 1, padding: '11px', borderRadius: 50, textDecoration: 'none',
+              background: '#25D366', color: 'white', fontWeight: 700, fontSize: '0.9rem',
+              fontFamily: 'Rubik, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}
+          >
+            💬 WhatsApp
+          </a>
+        </div>
+
+        <p style={{ color: '#9ca3af', fontSize: '0.8rem', fontFamily: 'Rubik, sans-serif' }}>
+          המשחק יתחיל אוטומטית כשהיריב יצטרף
+        </p>
+      </div>
+    </div>
+  )
+}
+
 const S = {
-  page:      { height: '100dvh', background: '#f5f5f5', direction: 'rtl', display: 'flex', flexDirection: 'column', overflow: 'hidden' },
-  header:    { background: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', padding: '9px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexShrink: 0, zIndex: 20 },
-  codeBadge: { background: '#f3e5f5', color: '#4a154b', padding: '4px 10px', borderRadius: 20, fontWeight: 'bold', fontSize: '0.88rem', letterSpacing: 2 },
-  ansBtn:    { padding: '8px', border: 'none', borderRadius: 8, fontSize: '0.88rem', fontWeight: 'bold', cursor: 'pointer' },
-  btn:       { background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', border: 'none', borderRadius: 10, padding: '10px 18px', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' },
-  overlay:   { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 },
-  modal:     { background: 'white', borderRadius: 20, padding: '26px 22px', maxWidth: 370, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
-  secretCard:{ background: 'white', borderRadius: 20, padding: 24, textAlign: 'center' },
-  codeBox:   { fontSize: '2.8rem', fontWeight: 'bold', letterSpacing: 8, color: '#764ba2', background: '#f3e5f5', borderRadius: 12, padding: '14px 20px', display: 'inline-block' },
-  resultImg: { width: 95, height: 95, objectFit: 'cover', borderRadius: 10, border: '2px solid #ddd' },
+  page:      { height: '100dvh', background: '#f0f4ff', direction: 'rtl', display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+  header:    {
+    background: 'linear-gradient(135deg, #312e81 0%, #4338ca 100%)',
+    boxShadow: '0 2px 12px rgba(49,46,129,0.4)',
+    padding: '9px 14px', display: 'flex', alignItems: 'center',
+    justifyContent: 'space-between', gap: 8, flexShrink: 0, zIndex: 20,
+  },
+  codeBadge: { background: 'rgba(255,255,255,0.2)', color: 'white', padding: '4px 10px', borderRadius: 20, fontWeight: 700, fontSize: '0.88rem', letterSpacing: 2, fontFamily: 'Rubik, sans-serif' },
+  ansBtn:    { padding: '8px', border: 'none', borderRadius: 10, fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Rubik, sans-serif' },
+  btn:       { background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', color: 'white', border: 'none', borderRadius: 50, padding: '10px 18px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Rubik, sans-serif' },
+  overlay:   { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 },
+  modal:     { background: 'white', borderRadius: 24, padding: '28px 22px', maxWidth: 370, width: '100%', textAlign: 'center', boxShadow: '0 24px 60px rgba(0,0,0,0.4)', fontFamily: 'Rubik, sans-serif' },
+  secretCard:{ background: 'white', borderRadius: 24, padding: 28, textAlign: 'center', fontFamily: 'Rubik, sans-serif' },
+  codeBox:   { fontSize: '2.8rem', fontWeight: 900, letterSpacing: 8, color: '#7c3aed', background: '#f5f3ff', borderRadius: 16, padding: '14px 20px', display: 'inline-block', fontFamily: 'Rubik, sans-serif' },
+  resultImg: { width: 95, height: 95, objectFit: 'cover', borderRadius: 12, border: '2px solid #e0e7ff' },
 }

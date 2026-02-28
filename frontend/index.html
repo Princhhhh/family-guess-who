@@ -4,26 +4,73 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Family Guess Who - נחש מי משפחתי</title>
+    <title>נחש מי הלביא?</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
     <style>
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
       body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-family: 'Rubik', 'Segoe UI', sans-serif;
         direction: rtl;
-        background: #f0f4f8;
+        background: #f0f4ff;
         min-height: 100vh;
-        /* Prevent bounce/overscroll on iOS */
         overscroll-behavior: none;
         -webkit-text-size-adjust: 100%;
       }
-      /* Prevent iOS zoom on input focus */
-      input, textarea, select {
-        font-size: 16px !important;
+
+      input, textarea, select { font-size: 16px !important; font-family: 'Rubik', sans-serif; }
+
+      /* ── Animations ── */
+      @keyframes floatY {
+        0%, 100% { transform: translateY(0px); }
+        50%       { transform: translateY(-8px); }
       }
+      @keyframes pulse-glow {
+        0%, 100% { box-shadow: 0 4px 20px rgba(124,58,237,0.4); }
+        50%       { box-shadow: 0 8px 36px rgba(124,58,237,0.7); }
+      }
+      @keyframes pulse-red {
+        0%, 100% { box-shadow: 0 4px 16px rgba(239,68,68,0.4); }
+        50%       { box-shadow: 0 6px 28px rgba(239,68,68,0.7); }
+      }
+      @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes shimmer {
+        0%   { background-position: -200% center; }
+        100% { background-position:  200% center; }
+      }
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to   { transform: rotate(360deg); }
+      }
+      @keyframes cardFlip {
+        0%   { transform: rotateY(0deg); }
+        50%  { transform: rotateY(90deg); }
+        100% { transform: rotateY(0deg); }
+      }
+
+      .float    { animation: floatY 3s ease-in-out infinite; }
+      .fade-in  { animation: fadeInUp 0.5s ease forwards; }
+      .btn-glow { animation: pulse-glow 2s ease-in-out infinite; }
+      .btn-red-glow { animation: pulse-red 1.8s ease-in-out infinite; }
+
+      .gold-text {
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 40%, #fde68a 60%, #f59e0b 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: shimmer 3s linear infinite;
+      }
+
+      /* Scrollbar styling */
+      ::-webkit-scrollbar { width: 4px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 2px; }
     </style>
   </head>
   <body>

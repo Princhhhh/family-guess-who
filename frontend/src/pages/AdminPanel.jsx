@@ -113,7 +113,7 @@ export default function AdminPanel() {
       {/* ── Header ── */}
       <div style={S.header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#4a154b' }}>🔧 פאנל מנהל</span>
+          <span style={{ fontSize: '1.3rem', fontWeight: 800, color: '#312e81', fontFamily: 'Rubik, sans-serif' }}>🔧 פאנל מנהל — נחש מי הלביא</span>
           <span style={{
             background: saved.length >= 24 ? '#e8f5e9' : '#fff3e0',
             color:      saved.length >= 24 ? '#2e7d32' : '#e65100',
