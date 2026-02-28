@@ -65,6 +65,7 @@ export default function GameRoom() {
 
   const [phase,          setPhase]          = useState(playerNum === '1' ? 'waiting' : 'ready')
   const [flipped,        setFlipped]        = useState({})
+  const [flipping,       setFlipping]       = useState(new Set())
   // Turn system: player1 always goes first
   const [myTurn,         setMyTurn]         = useState(playerNum === '1')
   const [showSecret,     setShowSecret]     = useState(false)
@@ -157,11 +158,14 @@ export default function GameRoom() {
 
   const handleCardClick = useCallback((char) => {
     if (phase !== 'playing') return
-    // Can't toggle own secret character — it's permanently blurred
     if (secretCharacter && char.id === secretCharacter.id) return
     if (guessMode) { setGuessConfirm(char); return }
-    setFlipped(prev => ({ ...prev, [char.id]: !prev[char.id] }))
-  }, [phase, guessMode, secretCharacter])
+    if (flipping.has(char.id)) return // prevent double-click during flip animation
+    // Play flip animation, toggle blurred state at the halfway point
+    setFlipping(prev => new Set([...prev, char.id]))
+    setTimeout(() => setFlipped(prev => ({ ...prev, [char.id]: !prev[char.id] })), 160)
+    setTimeout(() => setFlipping(prev => { const n = new Set(prev); n.delete(char.id); return n }), 320)
+  }, [phase, guessMode, secretCharacter, flipping])
 
   const handleConfirmGuess = () => {
     if (!guessConfirm) return
@@ -249,17 +253,17 @@ export default function GameRoom() {
 
       {/* Header */}
       <div style={S.header}>
-        <span style={{ fontWeight: 800, color: 'white', fontSize: isMobile ? '0.9rem' : '1rem', fontFamily: 'Rubik, sans-serif' }}>
+        <span style={{ fontWeight: 800, color: 'white', fontSize: isMobile ? '0.9rem' : '1rem', fontFamily: 'Heebo, sans-serif' }}>
           🃏 נחש לביא
-          {opponentName ? <span style={{ fontSize: '0.75rem', opacity: 0.75, fontWeight: 400, marginRight: 8 }}>נגד {opponentName}</span> : null}
+          {opponentName ? <span style={{ fontSize: '0.75rem', opacity: 0.7, fontWeight: 400, marginRight: 8 }}>נגד {opponentName}</span> : null}
         </span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <span style={S.codeBadge}>{code}</span>
           {phase === 'playing' && (
             guessMode
-              ? <button style={{ ...S.btn, background: '#757575', padding: '7px 12px', fontSize: '0.82rem' }}
+              ? <button className="btn-3d" style={{ ...S.btn, background: '#64748b', padding: '7px 14px', fontSize: '0.82rem' }}
                   onClick={() => { setGuessMode(false); setGuessConfirm(null) }}>✕ בטל</button>
-              : <button style={{ ...S.btn, background: '#e53935', padding: '7px 12px', fontSize: '0.82rem' }}
+              : <button className="btn-3d" style={{ ...S.btn, background: '#F20D0D', padding: '7px 14px', fontSize: '0.82rem' }}
                   onClick={() => setGuessMode(true)}>🎯 ניחוש!</button>
           )}
         </div>
@@ -272,7 +276,7 @@ export default function GameRoom() {
       )}
 
       {guessMode && (
-        <div style={{ background: '#fff3e0', color: '#e65100', padding: '7px 14px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', borderBottom: '2px solid #ffcc80' }}>
+        <div style={{ background: '#fff1f1', color: '#C00A0A', padding: '7px 14px', textAlign: 'center', fontWeight: 700, fontSize: '0.85rem', borderBottom: '2px solid #fca5a5', fontFamily: 'Heebo, sans-serif' }}>
           👆 בחר את הדמות שאתה חושב שהיא הסוד של היריב
         </div>
       )}
@@ -296,31 +300,45 @@ export default function GameRoom() {
         }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? 'repeat(4, 1fr)' : 'repeat(6, 1fr)',
-            gap: isMobile ? 5 : 8,
+            gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)',
+            gap: isMobile ? 8 : 10,
           }}>
-            {characters.map(char => {
+            {characters.map((char, idx) => {
               const isFlipped  = !!flipped[char.id]
+              const isFlipping = flipping.has(char.id)
               const isMySecret = !!(secretCharacter && char.id === secretCharacter.id)
               return (
                 <div
                   key={char.id}
                   onClick={() => handleCardClick(char)}
+                  className={[
+                    'char-card',
+                    isFlipped || isMySecret ? 'char-card--disabled' : '',
+                    isFlipping ? 'char-card--flipping' : '',
+                  ].join(' ')}
                   style={{
                     position: 'relative',
-                    borderRadius: 8,
+                    borderRadius: 16,
                     overflow: 'hidden',
-                    cursor: phase === 'playing' && !isMySecret ? 'pointer' : 'default',
-                    // Purple glowing frame for own secret; orange dashed in guess mode otherwise
-                    border: isMySecret ? '3px solid #7c3aed' : '3px solid transparent',
+                    cursor: phase === 'playing' && !isMySecret && !isFlipped ? 'pointer' : 'default',
+                    background: 'white',
+                    // Red border normally; purple for own secret; orange outline in guess mode
+                    border: isMySecret
+                      ? '4px solid #7c3aed'
+                      : isFlipped ? '4px solid #E2E8F0'
+                      : '4px solid #F20D0D',
                     boxShadow: isMySecret
-                      ? '0 0 0 1px #a78bfa, 0 0 18px rgba(124,58,237,0.55), 0 2px 6px rgba(0,0,0,0.2)'
-                      : guessMode && !isFlipped ? '0 0 0 2px #ff9800' : '0 2px 6px rgba(0,0,0,0.13)',
-                    outline: guessMode && !isFlipped && !isMySecret ? '2px dashed #ff9800' : 'none',
-                    transition: 'filter 0.35s, transform 0.15s, box-shadow 0.15s',
-                    // Regular eliminated cards: blur the whole card
-                    filter: isFlipped && !isMySecret ? 'blur(4px) brightness(0.75) saturate(0.4)' : 'none',
-                    transform: guessMode && !isFlipped && !isMySecret ? 'scale(1.03)' : 'scale(1)',
+                      ? '0 0 0 1px #a78bfa, 0 0 16px rgba(124,58,237,0.45)'
+                      : isFlipped ? '0 2px 6px rgba(0,0,0,0.07)'
+                      : guessMode ? '0 0 0 3px #ff9800, 0 4px 16px rgba(255,152,0,0.3)'
+                      : '0 4px 14px rgba(0,0,0,0.12)',
+                    // grayscale + blur for eliminated; blur-only for own secret
+                    filter: isFlipped && !isMySecret
+                      ? 'blur(3px) grayscale(1) brightness(0.8)'
+                      : 'none',
+                    transform: guessMode && !isFlipped && !isMySecret ? 'scale(1.04)' : 'scale(1)',
+                    // staggered card entrance
+                    animation: `cardEnter 0.35s ease ${idx * 0.025}s both`,
                   }}
                 >
                   <img
@@ -328,42 +346,44 @@ export default function GameRoom() {
                     alt={char.name}
                     style={{
                       width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block',
-                      // Own secret: blur only the image (not the name below)
                       filter: isMySecret ? 'blur(5px) brightness(0.65) saturate(0.4)' : 'none',
-                      transform: isMySecret ? 'scale(1.12)' : 'scale(1)', // prevent white blur edges
+                      transform: isMySecret ? 'scale(1.12)' : 'scale(1)',
                       transition: 'filter 0.3s, transform 0.3s',
                     }}
                     onError={e => { e.target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect fill="%23ddd" width="80" height="80"/></svg>' }}
                   />
 
-                  {/* Top bar: "הדמות שלי" for own secret */}
+                  {/* "הדמות שלי" bar for own secret */}
                   {isMySecret && (
                     <div style={{
                       position: 'absolute', top: 0, left: 0, right: 0,
                       background: 'rgba(88,28,220,0.88)',
                       color: 'white',
-                      fontSize: isMobile ? '0.5rem' : '0.56rem',
-                      fontWeight: 'bold',
+                      fontSize: isMobile ? '0.5rem' : '0.55rem',
+                      fontWeight: 800,
                       textAlign: 'center',
-                      padding: '2px 2px',
-                      letterSpacing: '0.3px',
+                      padding: '3px 2px',
+                      fontFamily: 'Heebo, sans-serif',
                       zIndex: 3,
                     }}>
                       🎴 הדמות שלי
                     </div>
                   )}
 
-                  {/* Name label at bottom */}
+                  {/* Name at bottom */}
                   <div style={{
                     position: 'absolute', bottom: 0, left: 0, right: 0,
                     background: isMySecret
-                      ? 'linear-gradient(transparent, rgba(60,10,180,0.85))'
-                      : 'linear-gradient(transparent, rgba(0,0,0,0.72))',
+                      ? 'linear-gradient(transparent, rgba(60,10,180,0.88))'
+                      : isFlipped
+                        ? 'linear-gradient(transparent, rgba(0,0,0,0.5))'
+                        : 'linear-gradient(transparent, rgba(0,0,0,0.78))',
                     color: 'white',
-                    fontSize: isMobile ? '0.56rem' : '0.63rem',
-                    fontWeight: 'bold',
-                    padding: isMySecret ? '8px 2px 3px' : '2px 2px 3px',
+                    fontSize: isMobile ? '0.58rem' : '0.65rem',
+                    fontWeight: 700,
+                    padding: isMySecret ? '10px 3px 4px' : '4px 3px',
                     textAlign: 'center',
+                    fontFamily: 'Heebo, sans-serif',
                     zIndex: 2,
                   }}>
                     {char.name}
@@ -385,25 +405,25 @@ export default function GameRoom() {
           ),
           minHeight: 0,
         }}>
-          {/* Turn indicator — always shown at top of chat */}
+          {/* Turn indicator */}
           {phase === 'playing' && (
             <div style={{
               padding: '7px 12px',
               background: pendingQuestion
-                ? '#fff8e1'
-                : myTurn ? '#f0fdf4' : '#f8fafc',
-              borderBottom: `2px solid ${pendingQuestion ? '#ffe082' : myTurn ? '#86efac' : '#e2e8f0'}`,
+                ? '#fff7ed'
+                : myTurn ? '#fff1f1' : '#f0f6ff',
+              borderBottom: `3px solid ${pendingQuestion ? '#fb923c' : myTurn ? '#F20D0D' : '#0056B3'}`,
               display: 'flex', alignItems: 'center', gap: 6,
               flexShrink: 0,
             }}>
               <span style={{ fontSize: isMobile ? '0.7rem' : '0.75rem' }}>
-                {pendingQuestion ? '❓' : myTurn ? '📍' : '⏳'}
+                {pendingQuestion ? '❓' : myTurn ? '🔴' : '🔵'}
               </span>
               <span style={{
-                fontWeight: 700,
+                fontWeight: 800,
                 fontSize: isMobile ? '0.72rem' : '0.78rem',
-                color: pendingQuestion ? '#92400e' : myTurn ? '#15803d' : '#64748b',
-                fontFamily: 'Rubik, sans-serif',
+                color: pendingQuestion ? '#9a3412' : myTurn ? '#C00A0A' : '#0056B3',
+                fontFamily: 'Heebo, sans-serif',
               }}>
                 {pendingQuestion
                   ? 'ענה כן או לא 👆'
@@ -449,9 +469,10 @@ export default function GameRoom() {
             <input
               style={{
                 flex: 1, padding: '8px 10px', fontSize: '0.88rem',
-                border: `2px solid ${myTurn && !pendingQuestion ? '#c4b5fd' : '#e0e0e0'}`,
-                borderRadius: 8, outline: 'none', direction: 'rtl',
-                background: (!myTurn || pendingQuestion) ? '#f8fafc' : 'white',
+                border: `2px solid ${myTurn && !pendingQuestion ? '#F20D0D' : '#E2E8F0'}`,
+                borderRadius: 10, outline: 'none', direction: 'rtl',
+                background: (!myTurn || pendingQuestion) ? '#F8FAFC' : 'white',
+                fontFamily: 'Heebo, sans-serif',
                 transition: 'border-color 0.2s, background 0.2s',
               }}
               value={questionInput}
@@ -466,7 +487,8 @@ export default function GameRoom() {
               maxLength={100}
             />
             <button
-              style={{ ...S.btn, padding: '8px 12px', fontSize: '0.85rem', opacity: (pendingQuestion || !myTurn || !questionInput.trim()) ? 0.4 : 1 }}
+              className="btn-3d"
+              style={{ ...S.btn, padding: '8px 14px', fontSize: '0.85rem', opacity: (pendingQuestion || !myTurn || !questionInput.trim()) ? 0.35 : 1 }}
               onClick={handleSendQuestion}
               disabled={!!pendingQuestion || !myTurn || !questionInput.trim()}
             >שלח</button>
@@ -596,9 +618,9 @@ function WaitingScreen({ code, myName }) {
             onClick={copyLink}
             style={{
               flex: 1, padding: '11px', borderRadius: 50, border: 'none', cursor: 'pointer',
-              background: copied ? '#16a34a' : 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-              color: 'white', fontWeight: 700, fontSize: '0.9rem',
-              fontFamily: 'Rubik, sans-serif', transition: 'background 0.3s',
+              background: copied ? '#16a34a' : 'linear-gradient(135deg, #F20D0D, #C00A0A)',
+              color: 'white', fontWeight: 800, fontSize: '0.9rem',
+              fontFamily: 'Heebo, sans-serif', transition: 'background 0.3s',
             }}
             className={copied ? '' : 'btn-glow'}
           >
@@ -627,19 +649,19 @@ function WaitingScreen({ code, myName }) {
 }
 
 const S = {
-  page:      { height: '100dvh', background: '#f0f4ff', direction: 'rtl', display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+  page:      { height: '100dvh', background: '#F8FAFC', direction: 'rtl', display: 'flex', flexDirection: 'column', overflow: 'hidden' },
   header:    {
-    background: 'linear-gradient(135deg, #312e81 0%, #4338ca 100%)',
-    boxShadow: '0 2px 12px rgba(49,46,129,0.4)',
+    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
     padding: '9px 14px', display: 'flex', alignItems: 'center',
     justifyContent: 'space-between', gap: 8, flexShrink: 0, zIndex: 20,
   },
-  codeBadge: { background: 'rgba(255,255,255,0.2)', color: 'white', padding: '4px 10px', borderRadius: 20, fontWeight: 700, fontSize: '0.88rem', letterSpacing: 2, fontFamily: 'Rubik, sans-serif' },
-  ansBtn:    { padding: '8px', border: 'none', borderRadius: 10, fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Rubik, sans-serif' },
-  btn:       { background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', color: 'white', border: 'none', borderRadius: 50, padding: '10px 18px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Rubik, sans-serif' },
-  overlay:   { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 },
-  modal:     { background: 'white', borderRadius: 24, padding: '28px 22px', maxWidth: 370, width: '100%', textAlign: 'center', boxShadow: '0 24px 60px rgba(0,0,0,0.4)', fontFamily: 'Rubik, sans-serif' },
-  secretCard:{ background: 'white', borderRadius: 24, padding: 28, textAlign: 'center', fontFamily: 'Rubik, sans-serif' },
-  codeBox:   { fontSize: '2.8rem', fontWeight: 900, letterSpacing: 8, color: '#7c3aed', background: '#f5f3ff', borderRadius: 16, padding: '14px 20px', display: 'inline-block', fontFamily: 'Rubik, sans-serif' },
-  resultImg: { width: 95, height: 95, objectFit: 'cover', borderRadius: 12, border: '2px solid #e0e7ff' },
+  codeBadge: { background: 'rgba(242,13,13,0.25)', color: 'white', padding: '4px 10px', borderRadius: 20, fontWeight: 700, fontSize: '0.88rem', letterSpacing: 2, fontFamily: 'Heebo, sans-serif', border: '1px solid rgba(242,13,13,0.4)' },
+  ansBtn:    { padding: '8px', border: 'none', borderRadius: 10, fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Heebo, sans-serif' },
+  btn:       { background: 'linear-gradient(135deg, #F20D0D, #C00A0A)', color: 'white', border: 'none', borderRadius: 50, padding: '10px 18px', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'Heebo, sans-serif' },
+  overlay:   { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 },
+  modal:     { background: 'white', borderRadius: 24, padding: '28px 22px', maxWidth: 370, width: '100%', textAlign: 'center', boxShadow: '0 24px 60px rgba(0,0,0,0.4)', fontFamily: 'Heebo, sans-serif' },
+  secretCard:{ background: 'white', borderRadius: 24, padding: 28, textAlign: 'center', fontFamily: 'Heebo, sans-serif' },
+  codeBox:   { fontSize: '2.8rem', fontWeight: 900, letterSpacing: 8, color: '#F20D0D', background: '#fff1f1', borderRadius: 16, padding: '14px 20px', display: 'inline-block', fontFamily: 'Heebo, sans-serif' },
+  resultImg: { width: 95, height: 95, objectFit: 'cover', borderRadius: 12, border: '3px solid #F20D0D' },
 }

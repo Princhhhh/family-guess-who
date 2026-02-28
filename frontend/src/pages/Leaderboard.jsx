@@ -35,12 +35,12 @@ export default function Leaderboard() {
           {loading && (
             <div style={{ textAlign: 'center', padding: 48, color: '#888' }}>
               <div style={{ fontSize: '2rem', marginBottom: 8, animation: 'spin 1s linear infinite', display: 'inline-block' }}>⚙️</div>
-              <p style={{ fontFamily: 'Rubik, sans-serif' }}>טוען...</p>
+              <p style={{ fontFamily: 'Heebo, sans-serif' }}>טוען...</p>
             </div>
           )}
 
           {error && (
-            <div style={{ textAlign: 'center', padding: 40, color: '#c62828', fontFamily: 'Rubik, sans-serif' }}>
+            <div style={{ textAlign: 'center', padding: 40, color: '#c62828', fontFamily: 'Heebo, sans-serif' }}>
               <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>⚠️</div>
               <p>{error}</p>
             </div>
@@ -49,10 +49,10 @@ export default function Leaderboard() {
           {!loading && !error && users.length === 0 && (
             <div style={{ textAlign: 'center', padding: 48, color: '#aaa' }}>
               <div style={{ fontSize: '3rem', marginBottom: 12 }}>🎭</div>
-              <p style={{ fontFamily: 'Rubik, sans-serif', fontWeight: 600, color: '#666' }}>
+              <p style={{ fontFamily: 'Heebo, sans-serif', fontWeight: 600, color: '#666' }}>
                 עוד אין שחקנים בלידרבורד
               </p>
-              <p style={{ fontFamily: 'Rubik, sans-serif', fontSize: '0.9rem', color: '#999', marginTop: 6 }}>
+              <p style={{ fontFamily: 'Heebo, sans-serif', fontSize: '0.9rem', color: '#999', marginTop: 6 }}>
                 הכנס שם לפני המשחק כדי שניצחונות יירשמו!
               </p>
               <button style={S.btn} onClick={() => navigate('/')}>🎮 שחק עכשיו</button>
@@ -84,7 +84,7 @@ export default function Leaderboard() {
                       </td>
                       <td style={{ ...S.td, fontWeight: 700, color: isMe ? '#7c3aed' : '#1f2937' }}>
                         {u.username}
-                        {isMe && <span style={{ fontSize: '0.7rem', color: '#7c3aed', marginRight: 4 }}>(אתה)</span>}
+                        {isMe && <span style={{ fontSize: '0.7rem', color: '#F20D0D', marginRight: 4 }}>(אתה)</span>}
                       </td>
                       <td style={{ ...S.td, color: '#16a34a', fontWeight: 700 }}>
                         {u.wins}
@@ -106,7 +106,7 @@ export default function Leaderboard() {
           )}
         </div>
 
-        <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem', marginTop: 12, fontFamily: 'Rubik, sans-serif' }}>
+        <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem', marginTop: 12, fontFamily: 'Heebo, sans-serif' }}>
           * רק שחקנים עם שם מופיעים בלידרבורד
         </p>
       </div>
@@ -132,11 +132,11 @@ const S = {
   },
   title: {
     fontSize: '1.6rem', fontWeight: 900, color: 'white',
-    fontFamily: 'Rubik, sans-serif', textAlign: 'center', margin: 0,
+    fontFamily: 'Heebo, sans-serif', textAlign: 'center', margin: 0,
   },
   backBtn: {
     background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.25)',
-    borderRadius: 50, padding: '7px 16px', fontFamily: 'Rubik, sans-serif',
+    borderRadius: 50, padding: '7px 16px', fontFamily: 'Heebo, sans-serif',
     fontSize: '0.88rem', cursor: 'pointer', fontWeight: 600,
   },
 
@@ -145,7 +145,7 @@ const S = {
     boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
   },
 
-  table: { width: '100%', borderCollapse: 'collapse', fontFamily: 'Rubik, sans-serif' },
+  table: { width: '100%', borderCollapse: 'collapse', fontFamily: 'Heebo, sans-serif' },
   th: {
     padding: '12px 14px', textAlign: 'center', fontSize: '0.82rem',
     color: '#6b7280', fontWeight: 600, borderBottom: '2px solid #f3f4f6',
@@ -154,8 +154,8 @@ const S = {
   td: { padding: '11px 14px', textAlign: 'center', fontSize: '0.9rem', borderBottom: '1px solid #f3f4f6' },
 
   btn: {
-    marginTop: 20, background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+    marginTop: 20, background: 'linear-gradient(135deg, #F20D0D, #C00A0A)',
     color: 'white', border: 'none', borderRadius: 50, padding: '12px 28px',
-    fontSize: '1rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Rubik, sans-serif',
+    fontSize: '1rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Heebo, sans-serif',
   },
 }
