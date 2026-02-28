@@ -221,37 +221,42 @@ io.on('connection', (socket) => {
     console.log(`Socket ${socket.id} joined room ${code}`);
   });
 
-  socket.on('card_flipped', ({ code, characterId, flipped }) => {
-    // Broadcast to the OTHER player in the room
-    socket.to(`room_${code}`).emit('opponent_card_flipped', { characterId, flipped });
+  // Player sends a yes/no question to opponent
+  socket.on('send_question', ({ code, question }) => {
+    socket.to(`room_${code}`).emit('receive_question', { question });
   });
 
-  socket.on('make_guess', ({ code, playerId, guessName }) => {
+  // Player answers yes/no — broadcast to both
+  socket.on('answer_question', ({ code, question, answer }) => {
+    io.to(`room_${code}`).emit('question_answered', { question, answer });
+  });
+
+  // Final guess: player clicks a character image (by ID, not name)
+  socket.on('make_guess', ({ code, playerId, characterId }) => {
     const room = db.prepare('SELECT * FROM rooms WHERE code = ?').get(code);
-    if (!room) return;
+    if (!room || room.status === 'finished') return;
 
     const characters = JSON.parse(room.characters);
     const isPlayer1 = room.player1_id === playerId;
 
-    // Find the opponent's secret character
+    // Each player guesses the OPPONENT's secret
     const opponentSecretId = isPlayer1 ? room.player2_secret_id : room.player1_secret_id;
-    const opponentSecret = characters.find(c => c.id === opponentSecretId);
 
-    const correct = opponentSecret &&
-      opponentSecret.name.trim().toLowerCase() === guessName.trim().toLowerCase();
-
+    const correct = Number(opponentSecretId) === Number(characterId);
     const winner = correct ? playerId : (isPlayer1 ? room.player2_id : room.player1_id);
 
     db.prepare('UPDATE rooms SET status = ?, winner = ? WHERE code = ?')
       .run('finished', winner, code);
 
+    const guessedChar = characters.find(c => c.id === Number(characterId));
+    const correctChar  = characters.find(c => c.id === Number(opponentSecretId));
+
     io.to(`room_${code}`).emit('game_over', {
       winner,
       correct,
       guesser: playerId,
-      guessName,
-      correctName: opponentSecret?.name,
-      secretCharacter: opponentSecret
+      guessedCharacter: guessedChar,
+      correctCharacter: correctChar,
     });
   });
 

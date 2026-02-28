@@ -8,7 +8,12 @@
       "Bash(npm run build)",
       "Bash(git init)",
       "Bash(git add .)",
-      "Bash(git commit -m \"Family Guess Who - initial\")"
+      "Bash(git commit -m \"Family Guess Who - initial\")",
+      "Bash(git remote add origin https://github.com/Princhhhh/family-guess-who.git)",
+      "Bash(git branch -M main)",
+      "Bash(git push -u origin main)",
+      "Bash(git commit -m \"Fix game flow: private boards, Q&A chat, click-to-guess\")",
+      "Bash(git push)"
     ]
   }
 }
