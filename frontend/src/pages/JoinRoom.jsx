@@ -19,6 +19,7 @@ export default function JoinRoom() {
       })
       sessionStorage.setItem('playerId',        res.data.playerId)
       sessionStorage.setItem('playerNum',       '2')
+      sessionStorage.setItem('roomCode',        code)
       sessionStorage.setItem('characters',      JSON.stringify(res.data.characters))
       sessionStorage.setItem('secretCharacter', JSON.stringify(res.data.secretCharacter))
       if (username?.trim()) sessionStorage.setItem('playerName', username.trim())
@@ -31,12 +32,20 @@ export default function JoinRoom() {
   }
 
   useEffect(() => {
-    // If we already have a name stored, join immediately
+    // If we already have session data for THIS room, go straight to the game
+    // (prevents "room is full" error on page refresh / back-navigation)
+    const savedRoomCode = sessionStorage.getItem('roomCode')
+    const savedPlayerId = sessionStorage.getItem('playerId')
+    if (savedRoomCode === code && savedPlayerId) {
+      navigate(`/room/${code}`, { replace: true })
+      return
+    }
+
+    // If we have a saved name, join immediately; otherwise show name prompt
     const savedName = sessionStorage.getItem('playerName')
     if (savedName) {
       doJoin(savedName)
     } else {
-      // Show name prompt
       setNamePrompt(true)
     }
   }, [code])

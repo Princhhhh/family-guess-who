@@ -22,6 +22,7 @@ export default function HomePage() {
       const { code, playerId, characters, secretCharacter } = res.data
       sessionStorage.setItem('playerId', playerId)
       sessionStorage.setItem('playerNum', '1')
+      sessionStorage.setItem('roomCode', code)
       sessionStorage.setItem('characters', JSON.stringify(characters))
       sessionStorage.setItem('secretCharacter', JSON.stringify(secretCharacter))
       sessionStorage.removeItem('opponentName')

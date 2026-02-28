@@ -4,6 +4,37 @@ import socket from '../socket'
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL || ''
 
+// Play a short two-tone chime using Web Audio API (no external deps)
+function playChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const notes = [660, 880]
+    notes.forEach((freq, i) => {
+      const osc  = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain); gain.connect(ctx.destination)
+      osc.type = 'sine'
+      osc.frequency.value = freq
+      const t = ctx.currentTime + i * 0.18
+      gain.gain.setValueAtTime(0, t)
+      gain.gain.linearRampToValueAtTime(0.28, t + 0.04)
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.32)
+      osc.start(t); osc.stop(t + 0.35)
+    })
+  } catch (_) {}
+}
+
+// Flash the browser tab title until the user focuses the window
+function flashTabTitle(msg) {
+  if (document.visibilityState === 'visible') return
+  const orig = document.title
+  let on = true
+  const iv = setInterval(() => { document.title = on ? msg : orig; on = !on }, 700)
+  const stop = () => { clearInterval(iv); document.title = orig; window.removeEventListener('focus', stop) }
+  window.addEventListener('focus', stop)
+  setTimeout(stop, 8000)
+}
+
 function useIsMobile() {
   const [m, setM] = useState(() => window.innerWidth < 700)
   useEffect(() => {
@@ -59,14 +90,19 @@ export default function GameRoom() {
     socket.connect()
     socket.emit('join_room', { code, playerId })
 
-    socket.on('game_started', ({ characters: chars, opponentName: oName, firstTurn }) => {
+    socket.on('game_started', ({ characters: chars, opponentName: oName, firstTurn, currentTurn }) => {
       setCharacters(chars)
       sessionStorage.setItem('characters', JSON.stringify(chars))
       setOpponentConnected(true)
-      setPhase('ready')
+      // Only move to 'ready' if we're still in 'waiting' (don't regress from 'playing')
+      setPhase(prev => prev === 'waiting' || prev === 'ready' ? 'ready' : prev)
       if (oName) { setOpponentName(oName); sessionStorage.setItem('opponentName', oName) }
-      // firstTurn is player1's id — set myTurn based on who we are
-      if (firstTurn) setMyTurn(firstTurn === playerId)
+      // Restore turn — use currentTurn if available (catch-up after reconnect), else firstTurn
+      const turnId = currentTurn || firstTurn
+      if (turnId) setMyTurn(turnId === playerId)
+      // Notify player1 that opponent joined (play sound + flash tab)
+      playChime()
+      flashTabTitle(`🔔 ${oName || 'היריב'} הצטרף!`)
       addChat({ kind: 'system', text: `${oName ? oName + ' הצטרף' : 'היריב הצטרף'}! המשחק מתחיל 🎮` })
     })
     socket.on('receive_question', ({ question }) => {
@@ -518,14 +554,25 @@ function WaitingScreen({ code, myName }) {
       minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center',
       background: 'linear-gradient(160deg, #1e1b4b, #312e81, #1e3a5f)', padding: 20,
     }}>
-      <div style={{ background: 'white', borderRadius: 28, padding: '36px 28px', maxWidth: 420, width: '100%', textAlign: 'center', boxShadow: '0 24px 64px rgba(0,0,0,0.4)' }}>
-        <div className="float" style={{ fontSize: '3rem', marginBottom: 12 }}>⏳</div>
+      <div className="btn-glow" style={{ background: 'white', borderRadius: 28, padding: '36px 28px', maxWidth: 420, width: '100%', textAlign: 'center', boxShadow: '0 24px 64px rgba(0,0,0,0.4)' }}>
+        {/* Animated radar/pulse waiting icon */}
+        <div style={{ position: 'relative', display: 'inline-block', marginBottom: 16 }}>
+          <div className="pulse-glow" style={{
+            width: 64, height: 64, borderRadius: '50%',
+            background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '1.9rem', margin: '0 auto',
+          }}>🃏</div>
+        </div>
         <h2 style={{ color: '#312e81', fontFamily: 'Rubik, sans-serif', fontWeight: 800, marginBottom: 6 }}>
           ממתין ליריב...
         </h2>
         {myName && <p style={{ color: '#7c3aed', fontWeight: 700, fontSize: '0.9rem', marginBottom: 4, fontFamily: 'Rubik, sans-serif' }}>שלום, {myName}!</p>}
-        <p style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: 24, fontFamily: 'Rubik, sans-serif' }}>
+        <p style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: 4, fontFamily: 'Rubik, sans-serif' }}>
           שלח את הקישור לחבר שישחק נגדך
+        </p>
+        <p style={{ color: '#d1d5db', fontSize: '0.78rem', marginBottom: 20, fontFamily: 'Rubik, sans-serif' }}>
+          🔔 כשהחבר יצטרף תשמע צליל — שמור על המסך דלוק
         </p>
 
         {/* Shareable URL box */}

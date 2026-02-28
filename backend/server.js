@@ -263,6 +263,22 @@ io.on('connection', (socket) => {
     socketToRoom[socket.id] = code;
     socketToPlayer[socket.id] = playerId;
     console.log(`Socket ${socket.id} joined room ${code}`);
+
+    // If the room is already playing (player missed the game_started event due to
+    // page refresh / slow navigation), send game_started directly to this socket
+    const room = db.prepare('SELECT * FROM rooms WHERE code = ?').get(code);
+    if (room && room.status === 'playing') {
+      const characters = JSON.parse(room.characters);
+      const isPlayer1 = room.player1_id === playerId;
+      const opponentName = isPlayer1 ? room.player2_name : room.player1_name;
+      const currentTurn = roomTurns[code] || room.player1_id;
+      socket.emit('game_started', {
+        characters,
+        opponentName: opponentName || null,
+        firstTurn: room.player1_id,
+        currentTurn,
+      });
+    }
   });
 
   // Player sends a yes/no question to opponent
