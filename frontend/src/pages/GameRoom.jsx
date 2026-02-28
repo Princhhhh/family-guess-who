@@ -33,13 +33,7 @@ export default function GameRoom() {
   const [opponentName, setOpponentName] = useState(() => sessionStorage.getItem('opponentName') || '')
 
   const [phase,          setPhase]          = useState(playerNum === '1' ? 'waiting' : 'ready')
-  // Pre-blur own secret character from the start
-  const [flipped,        setFlipped]        = useState(() => {
-    try {
-      const secret = JSON.parse(sessionStorage.getItem('secretCharacter') || 'null')
-      return secret ? { [secret.id]: true } : {}
-    } catch { return {} }
-  })
+  const [flipped,        setFlipped]        = useState({})
   const [showSecret,     setShowSecret]     = useState(false)
   const [secretTimer,    setSecretTimer]    = useState(3)
   const [gameResult,     setGameResult]     = useState(null)
@@ -263,8 +257,8 @@ export default function GameRoom() {
             gap: isMobile ? 5 : 8,
           }}>
             {characters.map(char => {
-              const isFlipped = !!flipped[char.id]
-              const isMySecret = secretCharacter && char.id === secretCharacter.id
+              const isFlipped  = !!flipped[char.id]
+              const isMySecret = !!(secretCharacter && char.id === secretCharacter.id)
               return (
                 <div
                   key={char.id}
@@ -274,43 +268,63 @@ export default function GameRoom() {
                     borderRadius: 8,
                     overflow: 'hidden',
                     cursor: phase === 'playing' && !isMySecret ? 'pointer' : 'default',
+                    // Purple glowing frame for own secret; orange dashed in guess mode otherwise
+                    border: isMySecret ? '3px solid #7c3aed' : '3px solid transparent',
                     boxShadow: isMySecret
-                      ? '0 0 0 2px #7c3aed, 0 2px 6px rgba(0,0,0,0.2)'
-                      : '0 2px 6px rgba(0,0,0,0.13)',
-                    outline: guessMode && !isFlipped && !isMySecret ? '2px dashed #ff9800' : '2px solid transparent',
-                    transition: 'filter 0.35s, transform 0.15s, outline 0.15s',
-                    filter: isFlipped ? 'blur(4px) brightness(0.75) saturate(0.4)' : 'none',
+                      ? '0 0 0 1px #a78bfa, 0 0 18px rgba(124,58,237,0.55), 0 2px 6px rgba(0,0,0,0.2)'
+                      : guessMode && !isFlipped ? '0 0 0 2px #ff9800' : '0 2px 6px rgba(0,0,0,0.13)',
+                    outline: guessMode && !isFlipped && !isMySecret ? '2px dashed #ff9800' : 'none',
+                    transition: 'filter 0.35s, transform 0.15s, box-shadow 0.15s',
+                    // Regular eliminated cards: blur the whole card
+                    filter: isFlipped && !isMySecret ? 'blur(4px) brightness(0.75) saturate(0.4)' : 'none',
                     transform: guessMode && !isFlipped && !isMySecret ? 'scale(1.03)' : 'scale(1)',
                   }}
                 >
                   <img
                     src={imgSrc(char)}
                     alt={char.name}
-                    style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' }}
+                    style={{
+                      width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block',
+                      // Own secret: blur only the image (not the name below)
+                      filter: isMySecret ? 'blur(5px) brightness(0.65) saturate(0.4)' : 'none',
+                      transform: isMySecret ? 'scale(1.12)' : 'scale(1)', // prevent white blur edges
+                      transition: 'filter 0.3s, transform 0.3s',
+                    }}
                     onError={e => { e.target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect fill="%23ddd" width="80" height="80"/></svg>' }}
                   />
+
+                  {/* Top bar: "הדמות שלי" for own secret */}
+                  {isMySecret && (
+                    <div style={{
+                      position: 'absolute', top: 0, left: 0, right: 0,
+                      background: 'rgba(88,28,220,0.88)',
+                      color: 'white',
+                      fontSize: isMobile ? '0.5rem' : '0.56rem',
+                      fontWeight: 'bold',
+                      textAlign: 'center',
+                      padding: '2px 2px',
+                      letterSpacing: '0.3px',
+                      zIndex: 3,
+                    }}>
+                      🎴 הדמות שלי
+                    </div>
+                  )}
+
+                  {/* Name label at bottom */}
                   <div style={{
                     position: 'absolute', bottom: 0, left: 0, right: 0,
-                    background: 'linear-gradient(transparent, rgba(0,0,0,0.72))',
+                    background: isMySecret
+                      ? 'linear-gradient(transparent, rgba(60,10,180,0.85))'
+                      : 'linear-gradient(transparent, rgba(0,0,0,0.72))',
                     color: 'white',
                     fontSize: isMobile ? '0.56rem' : '0.63rem',
                     fontWeight: 'bold',
-                    padding: '2px 2px 3px',
+                    padding: isMySecret ? '8px 2px 3px' : '2px 2px 3px',
                     textAlign: 'center',
+                    zIndex: 2,
                   }}>
                     {char.name}
                   </div>
-                  {/* "זה אתה" badge on own secret */}
-                  {isMySecret && (
-                    <div style={{
-                      position: 'absolute', top: 3, right: 3,
-                      background: '#7c3aed', color: 'white',
-                      fontSize: '0.55rem', fontWeight: 'bold',
-                      padding: '1px 5px', borderRadius: 6, zIndex: 3,
-                    }}>
-                      אתה
-                    </div>
-                  )}
                 </div>
               )
             })}
