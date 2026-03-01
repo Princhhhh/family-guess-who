@@ -265,7 +265,8 @@ io.on('connection', (socket) => {
     console.log(`Socket ${socket.id} joined room ${code}`);
 
     // If the room is already playing (player missed the game_started event due to
-    // page refresh / slow navigation), send game_started directly to this socket
+    // page refresh / slow navigation / mobile background disconnect), send
+    // game_started directly to this socket so they can catch up
     const room = db.prepare('SELECT * FROM rooms WHERE code = ?').get(code);
     if (room && room.status === 'playing') {
       const characters = JSON.parse(room.characters);
@@ -278,6 +279,8 @@ io.on('connection', (socket) => {
         firstTurn: room.player1_id,
         currentTurn,
       });
+      // Tell the other player their opponent has reconnected (clears the disconnect banner)
+      socket.to(roomKey).emit('opponent_reconnected');
     }
   });
 

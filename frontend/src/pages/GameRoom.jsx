@@ -81,17 +81,38 @@ export default function GameRoom() {
   const [guessMode,      setGuessMode]      = useState(false)
   const [guessConfirm,   setGuessConfirm]   = useState(null)
 
-  const chatEndRef = useRef(null)
-  const secretRef  = useRef(null)
+  const chatEndRef  = useRef(null)
+  const secretRef   = useRef(null)
+  const firstJoinRef = useRef(false)  // suppress duplicate chime/flash on reconnect
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [chatLog, pendingQuestion])
 
   useEffect(() => {
     if (!playerId) { navigate('/'); return }
-    socket.connect()
-    socket.emit('join_room', { code, playerId })
+
+    // Re-join the socket room on every (re)connect.
+    // This fixes both bugs:
+    //   Bug 1 – host went to WhatsApp (socket dropped) before opponent joined
+    //   Bug 2 – mobile background causes silent disconnect; on return the socket
+    //            reconnects automatically but must rejoin the room to receive events
+    const doJoinRoom = () => socket.emit('join_room', { code, playerId })
+
+    // When the page becomes visible again (user returns from another app),
+    // reconnect the socket if it dropped, or re-assert room membership if still up
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        if (!socket.connected) socket.connect()   // triggers 'connect' → doJoinRoom
+        else doJoinRoom()                         // still connected — re-assert room
+      }
+    }
+
+    socket.on('connect', doJoinRoom)
+    document.addEventListener('visibilitychange', handleVisibility)
+    socket.connect()   // fires 'connect' → doJoinRoom (handles first join too)
 
     socket.on('game_started', ({ characters: chars, opponentName: oName, firstTurn, currentTurn }) => {
+      const isFirst = !firstJoinRef.current
+      firstJoinRef.current = true
       setCharacters(chars)
       sessionStorage.setItem('characters', JSON.stringify(chars))
       setOpponentConnected(true)
@@ -101,10 +122,12 @@ export default function GameRoom() {
       // Restore turn — use currentTurn if available (catch-up after reconnect), else firstTurn
       const turnId = currentTurn || firstTurn
       if (turnId) setMyTurn(turnId === playerId)
-      // Notify player1 that opponent joined (play sound + flash tab)
-      playChime()
-      flashTabTitle(`🔔 ${oName || 'היריב'} הצטרף!`)
-      addChat({ kind: 'system', text: `${oName ? oName + ' הצטרף' : 'היריב הצטרף'}! המשחק מתחיל 🎮` })
+      // Only notify on first join — suppress chime/flash/chat on silent reconnects
+      if (isFirst) {
+        playChime()
+        flashTabTitle(`🔔 ${oName || 'היריב'} הצטרף!`)
+        addChat({ kind: 'system', text: `${oName ? oName + ' הצטרף' : 'היריב הצטרף'}! המשחק מתחיל 🎮` })
+      }
     })
     socket.on('receive_question', ({ question }) => {
       setPendingQuestion(question)
@@ -122,9 +145,12 @@ export default function GameRoom() {
       setGuessMode(false); setGuessConfirm(null)
     })
     socket.on('opponent_disconnected', () => setDisconnected(true))
+    socket.on('opponent_reconnected', () => setDisconnected(false))
 
     return () => {
-      ['game_started','receive_question','question_answered','turn_changed','game_over','opponent_disconnected']
+      socket.off('connect', doJoinRoom)
+      document.removeEventListener('visibilitychange', handleVisibility)
+      ;['game_started','receive_question','question_answered','turn_changed','game_over','opponent_disconnected','opponent_reconnected']
         .forEach(e => socket.off(e))
       socket.disconnect()
     }
