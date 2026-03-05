@@ -106,7 +106,7 @@ export default function HomePage() {
         )}
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 16 }}>
-          <button style={S.bottomLink} onClick={() => navigate('/leaderboard')}>🏅 לידרבורד</button>
+          <button style={S.bottomLink} onClick={() => navigate('/leaderboard')}>🏅 לוח מנחשים</button>
           <span style={{ color: '#d1d5db', fontSize: '0.78rem', alignSelf: 'center' }}>|</span>
           <button style={S.adminLink} onClick={() => navigate('/admin')}>כניסת מנהל</button>
         </div>

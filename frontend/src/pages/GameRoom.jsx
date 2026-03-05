@@ -233,7 +233,7 @@ export default function GameRoom() {
           </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button style={S.btn} onClick={() => navigate('/')}>🏠 דף הבית</button>
-            <button style={{ ...S.btn, background: 'linear-gradient(135deg, #f59e0b, #d97706)' }} onClick={() => navigate('/leaderboard')}>🏅 לידרבורד</button>
+            <button style={{ ...S.btn, background: 'linear-gradient(135deg, #f59e0b, #d97706)' }} onClick={() => navigate('/leaderboard')}>🏅 לוח מנחשים</button>
           </div>
         </div>
       </div>

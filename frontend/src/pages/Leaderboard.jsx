@@ -27,7 +27,7 @@ export default function Leaderboard() {
         {/* Header */}
         <div style={S.header}>
           <button style={S.backBtn} onClick={() => navigate('/')}>← חזור</button>
-          <h1 style={S.title}>🏅 לידרבורד</h1>
+          <h1 style={S.title}>🏅 לוח מנחשים</h1>
           <div style={{ width: 60 }} />
         </div>
 
@@ -50,7 +50,7 @@ export default function Leaderboard() {
             <div style={{ textAlign: 'center', padding: 48, color: '#aaa' }}>
               <div style={{ fontSize: '3rem', marginBottom: 12 }}>🎭</div>
               <p style={{ fontFamily: 'Heebo, sans-serif', fontWeight: 600, color: '#666' }}>
-                עוד אין שחקנים בלידרבורד
+                עוד אין שחקנים בלוח המנחשים
               </p>
               <p style={{ fontFamily: 'Heebo, sans-serif', fontSize: '0.9rem', color: '#999', marginTop: 6 }}>
                 הכנס שם לפני המשחק כדי שניצחונות יירשמו!
@@ -107,7 +107,7 @@ export default function Leaderboard() {
         </div>
 
         <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem', marginTop: 12, fontFamily: 'Heebo, sans-serif' }}>
-          * רק שחקנים עם שם מופיעים בלידרבורד
+          * רק שחקנים עם שם מופיעים בלוח המנחשים
         </p>
       </div>
     </div>
