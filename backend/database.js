@@ -25,7 +25,7 @@ db.exec(`
 // Seed the default Levi game (id=1) — all existing data belongs to it
 db.exec(`
   INSERT OR IGNORE INTO games (id, slug, name, admin_password)
-  VALUES (1, 'levi', 'נחש לביא', 'admin123');
+  VALUES (1, 'lavi', 'נחש לביא', 'admin123');
 `);
 
 // ── Characters ─────────────────────────────────────────────────────────
