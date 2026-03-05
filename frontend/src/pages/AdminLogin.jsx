@@ -22,8 +22,7 @@ export default function AdminLogin() {
 
   return (
     <div style={S.page}>
-      <div style={S.blob1} /><div style={S.blob2} />
-      <div style={S.card} className="fade-in">
+      <div style={S.card}>
         <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🔐</div>
         <h2 style={S.title}>פאנל מנהל</h2>
         <p style={S.sub}>{slug}</p>
@@ -34,8 +33,8 @@ export default function AdminLogin() {
           onKeyDown={e => e.key === 'Enter' && handleLogin()} autoFocus
         />
         {error && <div style={S.error}>{error}</div>}
-        <button className="btn-glow" style={S.btn} onClick={handleLogin} disabled={loading}>
-          {loading ? '...' : 'כניסה'}
+        <button className="nb-btn" style={S.btn} onClick={handleLogin} disabled={loading}>
+          {loading ? '...' : 'כניסה →'}
         </button>
         <button style={S.ghost} onClick={() => navigate(`/${slug}`)}>← חזור לדף הבית</button>
       </div>
@@ -44,15 +43,41 @@ export default function AdminLogin() {
 }
 
 const S = {
-  page: { minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(160deg, #1e1b4b, #312e81, #1e3a5f)', padding: 20, position: 'relative', overflow: 'hidden' },
-  blob1: { position:'absolute', top:'-60px', right:'-60px', width:250, height:250, borderRadius:'50%', background:'rgba(139,92,246,0.2)', filter:'blur(50px)', pointerEvents:'none' },
-  blob2: { position:'absolute', bottom:'60px', left:'-40px', width:200, height:200, borderRadius:'50%', background:'rgba(59,130,246,0.15)', filter:'blur(40px)', pointerEvents:'none' },
-  card:  { background: 'rgba(255,255,255,0.97)', borderRadius: 28, padding: '36px 28px', maxWidth: 360, width: '100%', textAlign: 'center', boxShadow: '0 24px 64px rgba(0,0,0,0.4)', position: 'relative', zIndex: 1 },
-  title: { fontSize: '1.6rem', fontWeight: 800, color: '#1A202C', fontFamily: 'Heebo, sans-serif', marginBottom: 4 },
-  sub:   { color: '#6b7280', fontSize: '0.88rem', fontFamily: 'Heebo, sans-serif', direction: 'ltr' },
-  divider: { height: 2, background: 'linear-gradient(90deg, transparent, #e0e7ff, transparent)', margin: '20px 0' },
-  input: { display: 'block', width: '100%', padding: '12px 16px', border: '2px solid #e0e7ff', borderRadius: 14, marginBottom: 12, textAlign: 'center', outline: 'none', fontFamily: 'Heebo, sans-serif', color: '#1A202C', fontWeight: 600, boxSizing: 'border-box' },
-  btn:   { display: 'block', width: '100%', padding: '13px', background: 'linear-gradient(135deg, #F20D0D, #C00A0A)', color: 'white', border: 'none', borderRadius: 50, fontSize: '1rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Heebo, sans-serif' },
-  ghost: { display: 'block', marginTop: 14, color: '#9ca3af', fontSize: '0.88rem', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'Heebo, sans-serif' },
-  error: { color: '#dc2626', background: '#fef2f2', borderRadius: 10, padding: '8px 12px', fontSize: '0.88rem', marginBottom: 12 },
+  page: {
+    minHeight: '100dvh', display: 'flex', alignItems: 'center',
+    justifyContent: 'center', background: '#fffdf5',
+    padding: 20, direction: 'rtl',
+  },
+  card: {
+    background: 'white', border: '2.5px solid #111', borderRadius: 20,
+    boxShadow: '7px 7px 0 #111', padding: '36px 28px',
+    maxWidth: 360, width: '100%', textAlign: 'center',
+  },
+  title: { fontSize: '1.6rem', fontWeight: 900, color: '#111', fontFamily: 'Heebo, sans-serif', marginBottom: 4 },
+  sub:   { color: '#777', fontSize: '0.88rem', fontFamily: 'Heebo, sans-serif', direction: 'ltr', fontWeight: 600 },
+  divider: { height: '2.5px', background: '#111', margin: '20px 0' },
+  input: {
+    display: 'block', width: '100%', padding: '12px 16px',
+    border: '2.5px solid #111', borderRadius: 10,
+    boxShadow: '3px 3px 0 #111',
+    marginBottom: 12, textAlign: 'center', outline: 'none',
+    fontFamily: 'Heebo, sans-serif', color: '#111',
+    fontWeight: 700, boxSizing: 'border-box', fontSize: '1rem',
+  },
+  btn: {
+    display: 'block', width: '100%', padding: '13px',
+    background: '#ffd23f', borderRadius: 10,
+    fontSize: '1rem', fontWeight: 800, color: '#111',
+    fontFamily: 'Heebo, sans-serif',
+  },
+  ghost: {
+    display: 'block', marginTop: 14, color: '#888',
+    fontSize: '0.88rem', cursor: 'pointer',
+    background: 'none', border: 'none', fontFamily: 'Heebo, sans-serif', fontWeight: 600,
+  },
+  error: {
+    color: '#c00', background: '#fff0f0', border: '2px solid #c00',
+    borderRadius: 8, padding: '8px 12px', fontSize: '0.88rem',
+    marginBottom: 12, fontWeight: 700, fontFamily: 'Heebo, sans-serif',
+  },
 }

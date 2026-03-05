@@ -15,7 +15,7 @@ export default function HomePage() {
   useEffect(() => {
     axios.get(`/api/g/${slug}`)
       .then(r => setGameName(r.data.name))
-      .catch(() => navigate('/'))   // unknown slug → back to index
+      .catch(() => navigate('/'))
   }, [slug])
 
   const saveName = (val) => { setUsername(val); sessionStorage.setItem('playerName', val.trim()) }
@@ -54,63 +54,52 @@ export default function HomePage() {
 
   return (
     <div style={S.page}>
-      <div style={S.blob1} /><div style={S.blob2} /><div style={S.blob3} />
-
-      <div style={S.card} className="fade-in">
-        <div className="float" style={{ fontSize: '3.5rem', lineHeight: 1, marginBottom: 8 }}>🃏</div>
-        <h1 style={S.title} className="gold-text">{gameName || '...'}</h1>
+      <div style={S.card}>
+        <div style={{ fontSize: '3rem', marginBottom: 4 }}>🃏</div>
+        <h1 style={S.title}>{gameName || '...'}</h1>
         <p style={S.subtitle}>משחק הדמויות המסתורית</p>
         <div style={S.divider} />
 
-        {/* Username */}
-        <div style={{ marginBottom: 16 }}>
-          <input
-            style={S.nameInput} type="text" placeholder="השם שלך (אופציונלי)"
-            value={username} onChange={e => saveName(e.target.value)} maxLength={20}
-          />
-        </div>
+        <input
+          style={S.input} type="text" placeholder="השם שלך (אופציונלי)"
+          value={username} onChange={e => saveName(e.target.value)} maxLength={20}
+        />
 
         {!mode && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <button className="btn-glow" style={S.btnPrimary} onClick={handleCreate} disabled={loading}>
-              {loading ? '...' : '🎮  צור משחק חדש'}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 4 }}>
+            <button className="nb-btn" style={S.btnYellow} onClick={handleCreate} disabled={loading}>
+              {loading ? '...' : '🎮 צור משחק חדש'}
             </button>
             <div style={S.orRow}>
               <span style={S.orLine}/><span style={S.orText}>או</span><span style={S.orLine}/>
             </div>
-            <button style={S.btnSecondary} onClick={() => setMode('join')}>🔑  הצטרף עם קוד</button>
+            <button className="nb-btn" style={S.btnWhite} onClick={() => setMode('join')}>🔑 הצטרף עם קוד</button>
             {error && <div style={S.error}>{error}</div>}
           </div>
         )}
 
         {mode === 'join' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <p style={{ color: '#6b7280', fontSize: '0.9rem', textAlign: 'center' }}>הכנס את הקוד שקיבלת</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
+            <p style={{ color: '#555', fontSize: '0.9rem', textAlign: 'center', fontFamily: 'Heebo, sans-serif', fontWeight: 600 }}>הכנס את הקוד שקיבלת</p>
             <input
               style={S.codeInput} type="text" inputMode="numeric" maxLength={4}
-              placeholder="0 0 0 0" value={joinCode}
+              placeholder="0000" value={joinCode}
               onChange={e => { setJoinCode(e.target.value.replace(/\D/g, '')); setError('') }}
               onKeyDown={e => e.key === 'Enter' && handleJoin()} autoFocus
             />
             {error && <div style={S.error}>{error}</div>}
-            <button className="btn-glow" style={S.btnPrimary} onClick={handleJoin} disabled={loading}>
-              {loading ? '...' : '🚀  הצטרף למשחק'}
+            <button className="nb-btn" style={S.btnYellow} onClick={handleJoin} disabled={loading}>
+              {loading ? '...' : '🚀 הצטרף למשחק'}
             </button>
             <button style={S.btnGhost} onClick={() => { setMode(null); setError('') }}>← חזור</button>
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 20 }}>
           <button style={S.bottomLink} onClick={() => navigate(`/${slug}/leaderboard`)}>🏅 לוח מנחשים</button>
-          <span style={{ color: '#d1d5db', fontSize: '0.78rem', alignSelf: 'center' }}>|</span>
+          <span style={{ color: '#ccc', alignSelf: 'center' }}>|</span>
           <button style={S.adminLink} onClick={() => navigate(`/${slug}/admin`)}>כניסת מנהל</button>
         </div>
-      </div>
-
-      <div style={S.decorRow}>
-        {['👴','👵','🧑','👦','👧','🧔'].map((e, i) => (
-          <div key={i} className="float" style={{ ...S.miniCard, animationDelay: `${i * 0.4}s` }}>{e}</div>
-        ))}
       </div>
     </div>
   )
@@ -120,27 +109,59 @@ const S = {
   page: {
     minHeight: '100dvh', display: 'flex', flexDirection: 'column',
     alignItems: 'center', justifyContent: 'center',
-    background: 'linear-gradient(160deg, #1e1b4b 0%, #312e81 55%, #1e3a5f 100%)',
-    padding: '20px 16px', position: 'relative', overflow: 'hidden',
+    background: '#fffdf5', padding: '20px 16px', direction: 'rtl',
   },
-  blob1: { position:'absolute', top:'-80px', right:'-80px', width:300, height:300, borderRadius:'50%', background:'rgba(139,92,246,0.2)', filter:'blur(60px)', pointerEvents:'none' },
-  blob2: { position:'absolute', bottom:'80px', left:'-60px', width:250, height:250, borderRadius:'50%', background:'rgba(59,130,246,0.15)', filter:'blur(50px)', pointerEvents:'none' },
-  blob3: { position:'absolute', top:'40%', left:'40%', width:200, height:200, borderRadius:'50%', background:'rgba(245,158,11,0.08)', filter:'blur(40px)', pointerEvents:'none' },
-  card: { background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(20px)', borderRadius: 28, padding: '36px 28px', maxWidth: 400, width: '100%', boxShadow: '0 24px 64px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1)', textAlign: 'center', position: 'relative', zIndex: 1 },
-  title:    { fontSize: '2.4rem', fontWeight: 900, letterSpacing: '-0.5px', fontFamily: 'Heebo, sans-serif', lineHeight: 1.1, marginBottom: 6 },
-  subtitle: { color: '#6b7280', fontSize: '0.95rem', fontWeight: 500, marginBottom: 0 },
-  divider:  { height: 2, background: 'linear-gradient(90deg, transparent, #ffd0d0, transparent)', margin: '20px 0', borderRadius: 2 },
-  nameInput: { display: 'block', width: '100%', padding: '11px 16px', border: '2px solid #ffd0d0', borderRadius: 14, fontSize: '0.95rem', fontFamily: 'Heebo, sans-serif', color: '#1A202C', textAlign: 'center', outline: 'none', direction: 'rtl', boxSizing: 'border-box' },
-  btnPrimary: { display: 'block', width: '100%', padding: '14px 20px', background: 'linear-gradient(135deg, #F20D0D, #C00A0A)', color: 'white', border: 'none', borderRadius: 50, fontSize: '1.05rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Heebo, sans-serif', letterSpacing: '0.3px' },
-  btnSecondary: { display: 'block', width: '100%', padding: '13px 20px', background: 'white', color: '#0056B3', border: '2px solid #0056B3', borderRadius: 50, fontSize: '1rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Heebo, sans-serif' },
-  btnGhost: { display: 'block', width: '100%', padding: '10px', background: 'none', color: '#9ca3af', border: 'none', fontSize: '0.9rem', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' },
+  card: {
+    background: 'white', border: '2.5px solid #111', borderRadius: 20,
+    boxShadow: '7px 7px 0 #111', padding: '36px 28px',
+    maxWidth: 400, width: '100%', textAlign: 'center',
+  },
+  title:    { fontSize: '2.4rem', fontWeight: 900, color: '#111', fontFamily: 'Heebo, sans-serif', letterSpacing: '-0.5px', marginBottom: 4 },
+  subtitle: { color: '#555', fontSize: '0.95rem', fontWeight: 600, fontFamily: 'Heebo, sans-serif' },
+  divider:  { height: '2.5px', background: '#111', margin: '20px 0', borderRadius: 2 },
+  input: {
+    display: 'block', width: '100%', padding: '11px 16px',
+    border: '2.5px solid #111', borderRadius: 10,
+    fontSize: '0.95rem', fontFamily: 'Heebo, sans-serif',
+    color: '#111', textAlign: 'center', outline: 'none',
+    direction: 'rtl', boxSizing: 'border-box',
+    boxShadow: '3px 3px 0 #111', marginBottom: 12,
+  },
+  btnYellow: {
+    display: 'block', width: '100%', padding: '14px 20px',
+    background: '#ffd23f', borderRadius: 10,
+    fontSize: '1.05rem', fontWeight: 800, color: '#111',
+    fontFamily: 'Heebo, sans-serif',
+  },
+  btnWhite: {
+    display: 'block', width: '100%', padding: '13px 20px',
+    background: 'white', borderRadius: 10,
+    fontSize: '1rem', fontWeight: 800, color: '#111',
+    fontFamily: 'Heebo, sans-serif',
+  },
+  btnGhost: {
+    display: 'block', width: '100%', padding: '10px',
+    background: 'none', color: '#888', border: 'none',
+    fontSize: '0.9rem', cursor: 'pointer', fontFamily: 'Heebo, sans-serif', fontWeight: 600,
+  },
   orRow:  { display: 'flex', alignItems: 'center', gap: 10 },
-  orLine: { flex: 1, height: 1, background: '#e5e7eb' },
-  orText: { color: '#9ca3af', fontSize: '0.85rem', fontWeight: 500 },
-  codeInput: { display: 'block', width: '100%', padding: '14px', fontSize: '2rem', fontWeight: 700, border: '2px solid #ffd0d0', borderRadius: 16, textAlign: 'center', letterSpacing: '10px', outline: 'none', direction: 'ltr', color: '#1A202C', fontFamily: 'Heebo, sans-serif' },
-  error:    { color: '#dc2626', background: '#fef2f2', borderRadius: 10, padding: '8px 12px', fontSize: '0.88rem', fontWeight: 500 },
-  bottomLink: { background: 'none', border: 'none', color: '#F20D0D', fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'Heebo, sans-serif', fontWeight: 600 },
-  adminLink:  { background: 'none', border: 'none', color: '#d1d5db', fontSize: '0.78rem', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' },
-  decorRow: { position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 10, zIndex: 0 },
-  miniCard: { width: 40, height: 52, background: 'rgba(255,255,255,0.12)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', boxShadow: '0 4px 12px rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.2)' },
+  orLine: { flex: 1, height: '2px', background: '#111' },
+  orText: { color: '#111', fontSize: '0.85rem', fontWeight: 800 },
+  codeInput: {
+    display: 'block', width: '100%', padding: '14px',
+    fontSize: '2.2rem', fontWeight: 900,
+    border: '2.5px solid #111', borderRadius: 10,
+    boxShadow: '3px 3px 0 #111',
+    textAlign: 'center', letterSpacing: '12px',
+    outline: 'none', direction: 'ltr', color: '#111',
+    fontFamily: 'Heebo, sans-serif',
+  },
+  error: {
+    color: '#c00', background: '#fff0f0',
+    border: '2px solid #c00', borderRadius: 8,
+    padding: '8px 12px', fontSize: '0.88rem', fontWeight: 700,
+    fontFamily: 'Heebo, sans-serif',
+  },
+  bottomLink: { background: 'none', border: 'none', color: '#e63946', fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'Heebo, sans-serif', fontWeight: 700 },
+  adminLink:  { background: 'none', border: 'none', color: '#aaa', fontSize: '0.78rem', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' },
 }

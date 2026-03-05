@@ -70,7 +70,7 @@ export default function SuperAdmin() {
     <div style={S.page}>
       <div style={S.card}>
         <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🔑</div>
-        <h2 style={{ fontFamily: 'Heebo, sans-serif', color: '#1A202C', marginBottom: 16 }}>ניהול מערכת</h2>
+        <h2 style={{ fontFamily: 'Heebo, sans-serif', color: '#111', marginBottom: 16, fontWeight: 900 }}>ניהול מערכת</h2>
         <input
           style={S.input} type="password" placeholder="סיסמת super-admin"
           value={pw} onChange={e => { setPw(e.target.value); setLoginErr('') }}
@@ -89,7 +89,7 @@ export default function SuperAdmin() {
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <h1 style={{ color: 'white', fontFamily: 'Heebo, sans-serif', fontWeight: 900, fontSize: '1.6rem' }}>
+          <h1 style={{ color: '#111', fontFamily: 'Heebo, sans-serif', fontWeight: 900, fontSize: '1.6rem' }}>
             🔧 ניהול מערכת
           </h1>
           <button style={S.ghost} onClick={() => navigate('/')}>← חזור</button>
@@ -166,14 +166,14 @@ export default function SuperAdmin() {
 }
 
 const S = {
-  page: { minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(160deg, #1e1b4b, #312e81, #1e3a5f)', direction: 'rtl' },
-  card: { background: 'white', borderRadius: 24, padding: '36px 28px', maxWidth: 360, width: '100%', textAlign: 'center', boxShadow: '0 24px 64px rgba(0,0,0,0.4)' },
-  section: { background: 'rgba(255,255,255,0.95)', borderRadius: 20, padding: 24, marginBottom: 20, boxShadow: '0 8px 30px rgba(0,0,0,0.2)' },
-  sTitle: { fontSize: '1.05rem', fontWeight: 800, color: '#312e81', fontFamily: 'Heebo, sans-serif', marginBottom: 16 },
-  gameRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', borderRadius: 12, padding: '12px 16px', border: '1px solid #e2e8f0' },
-  input: { display: 'block', width: '100%', padding: '11px 14px', border: '2px solid #e0e7ff', borderRadius: 12, fontSize: '0.95rem', fontFamily: 'Heebo, sans-serif', color: '#1A202C', outline: 'none', direction: 'rtl', boxSizing: 'border-box' },
-  btn: { display: 'block', width: '100%', padding: '12px', background: 'linear-gradient(135deg, #F20D0D, #C00A0A)', color: 'white', border: 'none', borderRadius: 50, fontSize: '1rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Heebo, sans-serif', marginTop: 4 },
-  smallBtn: { color: 'white', border: 'none', borderRadius: 20, padding: '5px 12px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Heebo, sans-serif' },
-  ghost: { background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' },
-  err: { borderRadius: 10, padding: '8px 12px', fontSize: '0.88rem', fontWeight: 600, background: '#fef2f2', color: '#c62828' },
+  page: { minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fffdf5', direction: 'rtl', padding: '20px 16px' },
+  card: { background: 'white', border: '2.5px solid #111', borderRadius: 20, padding: '36px 28px', maxWidth: 360, width: '100%', textAlign: 'center', boxShadow: '7px 7px 0 #111' },
+  section: { background: 'white', border: '2.5px solid #111', borderRadius: 16, padding: 24, marginBottom: 20, boxShadow: '5px 5px 0 #111' },
+  sTitle: { fontSize: '1.05rem', fontWeight: 900, color: '#111', fontFamily: 'Heebo, sans-serif', marginBottom: 16 },
+  gameRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafaf5', borderRadius: 10, padding: '12px 16px', border: '2px solid #111' },
+  input: { display: 'block', width: '100%', padding: '11px 14px', border: '2.5px solid #111', borderRadius: 10, boxShadow: '3px 3px 0 #111', fontSize: '0.95rem', fontFamily: 'Heebo, sans-serif', color: '#111', outline: 'none', direction: 'rtl', boxSizing: 'border-box', fontWeight: 700, marginBottom: 8 },
+  btn: { display: 'block', width: '100%', padding: '12px', background: '#ffd23f', color: '#111', border: '2.5px solid #111', borderRadius: 10, fontSize: '1rem', fontWeight: 900, cursor: 'pointer', fontFamily: 'Heebo, sans-serif', marginTop: 4, boxShadow: '4px 4px 0 #111' },
+  smallBtn: { color: 'white', border: '2px solid #111', borderRadius: 6, padding: '5px 10px', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'Heebo, sans-serif', boxShadow: '2px 2px 0 #111' },
+  ghost: { background: 'none', border: 'none', color: '#888', fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'Heebo, sans-serif', fontWeight: 600 },
+  err: { borderRadius: 8, padding: '8px 12px', fontSize: '0.88rem', fontWeight: 700, background: '#fff0f0', color: '#c00', border: '2px solid #c00', fontFamily: 'Heebo, sans-serif' },
 }

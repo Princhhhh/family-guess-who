@@ -90,10 +90,10 @@ export default function AdminPanel() {
     <div style={S.page}>
       <div style={S.header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '1.3rem', fontWeight: 800, color: '#312e81', fontFamily: 'Heebo, sans-serif' }}>
+          <span style={{ fontSize: '1.3rem', fontWeight: 900, color: '#111', fontFamily: 'Heebo, sans-serif' }}>
             🔧 פאנל מנהל — {gameName || slug}
           </span>
-          <span style={{ background: saved.length >= 24 ? '#e8f5e9' : '#fff3e0', color: saved.length >= 24 ? '#2e7d32' : '#e65100', padding: '3px 12px', borderRadius: 20, fontSize: '0.85rem', fontWeight: 'bold' }}>
+          <span style={{ background: saved.length >= 24 ? '#ffd23f' : '#fff0f0', color: '#111', border: '2px solid #111', padding: '3px 12px', borderRadius: 6, fontSize: '0.85rem', fontWeight: 800, fontFamily: 'Heebo, sans-serif' }}>
             {saved.length} דמויות {saved.length < 24 ? `(חסרות ${24 - saved.length})` : '✓'}
           </span>
         </div>
@@ -183,24 +183,24 @@ export default function AdminPanel() {
 }
 
 const S = {
-  page:    { minHeight: '100vh', background: '#f5f5f5', direction: 'rtl' },
-  header:  { background: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, position: 'sticky', top: 0, zIndex: 10 },
+  page:    { minHeight: '100vh', background: '#fffdf5', direction: 'rtl' },
+  header:  { background: 'white', borderBottom: '2.5px solid #111', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, position: 'sticky', top: 0, zIndex: 10 },
   content: { maxWidth: 1000, margin: '0 auto', padding: '20px 16px' },
-  card:    { background: 'white', borderRadius: 16, padding: 24, marginBottom: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' },
-  sectionTitle: { fontSize: '1.1rem', fontWeight: 'bold', color: '#4a154b', marginBottom: 16 },
-  dropZone: { border: '2px dashed #ce93d8', borderRadius: 14, padding: '32px 20px', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s', background: '#fafafa' },
-  dropZoneActive: { borderColor: '#764ba2', background: '#f3e5f5', transform: 'scale(1.01)' },
+  card:    { background: 'white', border: '2.5px solid #111', borderRadius: 16, padding: 24, marginBottom: 20, boxShadow: '6px 6px 0 #111' },
+  sectionTitle: { fontSize: '1.1rem', fontWeight: 900, color: '#111', marginBottom: 16, fontFamily: 'Heebo, sans-serif' },
+  dropZone: { border: '3px dashed #111', borderRadius: 12, padding: '32px 20px', textAlign: 'center', cursor: 'pointer', transition: 'all 0.15s', background: '#fafaf5' },
+  dropZoneActive: { borderColor: '#ffd23f', background: '#fffbeb', transform: 'scale(1.01)' },
   pendingGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 12 },
-  pendingCard: { position: 'relative', borderRadius: 12, overflow: 'hidden', background: '#fafafa', border: '1px solid #eee', display: 'flex', flexDirection: 'column' },
+  pendingCard: { position: 'relative', borderRadius: 10, overflow: 'hidden', background: 'white', border: '2px solid #111', display: 'flex', flexDirection: 'column', boxShadow: '3px 3px 0 #111' },
   pendingImg:  { width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' },
-  nameInput: { display: 'block', width: '100%', padding: '7px 8px', fontSize: '0.85rem', border: 'none', borderTop: '1px solid #eee', outline: 'none', textAlign: 'center', direction: 'rtl', background: 'white', boxSizing: 'border-box' },
-  removeBtn: { position: 'absolute', top: 4, right: 4, width: 22, height: 22, background: 'rgba(0,0,0,0.55)', color: 'white', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, lineHeight: 1 },
+  nameInput: { display: 'block', width: '100%', padding: '7px 8px', fontSize: '0.85rem', border: 'none', borderTop: '2px solid #111', outline: 'none', textAlign: 'center', direction: 'rtl', background: 'white', boxSizing: 'border-box', fontWeight: 700, fontFamily: 'Heebo, sans-serif' },
+  removeBtn: { position: 'absolute', top: 4, right: 4, width: 22, height: 22, background: '#111', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, lineHeight: 1, fontWeight: 900 },
   savedGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 12 },
-  savedCard: { borderRadius: 12, overflow: 'hidden', border: '1px solid #eee', background: '#fafafa' },
+  savedCard: { borderRadius: 10, overflow: 'hidden', border: '2px solid #111', background: 'white', boxShadow: '3px 3px 0 #111' },
   savedImg:  { width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' },
-  savedName: { textAlign: 'center', fontWeight: 'bold', padding: '6px 4px', fontSize: '0.82rem', color: '#333', borderTop: '1px solid #eee' },
-  deleteBtn: { display: 'block', width: '100%', padding: '6px', background: '#ffebee', color: '#c62828', border: 'none', borderTop: '1px solid #ffcdd2', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 'bold' },
-  primaryBtn: { background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: '0.95rem', fontWeight: 'bold', cursor: 'pointer' },
-  outlineBtn: { padding: '7px 14px', background: 'white', color: '#4a154b', border: '2px solid #764ba2', borderRadius: 8, fontSize: '0.88rem', cursor: 'pointer', fontWeight: 'bold' },
-  msg: { borderRadius: 8, padding: '10px 14px', fontSize: '0.9rem', fontWeight: 'bold' },
+  savedName: { textAlign: 'center', fontWeight: 800, padding: '6px 4px', fontSize: '0.82rem', color: '#111', borderTop: '2px solid #111', fontFamily: 'Heebo, sans-serif' },
+  deleteBtn: { display: 'block', width: '100%', padding: '6px', background: '#fff0f0', color: '#c00', border: 'none', borderTop: '2px solid #111', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 800, fontFamily: 'Heebo, sans-serif' },
+  primaryBtn: { background: '#ffd23f', color: '#111', border: '2.5px solid #111', borderRadius: 8, padding: '9px 18px', fontSize: '0.95rem', fontWeight: 800, cursor: 'pointer', boxShadow: '3px 3px 0 #111', fontFamily: 'Heebo, sans-serif' },
+  outlineBtn: { padding: '7px 14px', background: 'white', color: '#111', border: '2px solid #111', borderRadius: 8, fontSize: '0.88rem', cursor: 'pointer', fontWeight: 800, fontFamily: 'Heebo, sans-serif', boxShadow: '2px 2px 0 #111' },
+  msg: { borderRadius: 8, padding: '10px 14px', fontSize: '0.9rem', fontWeight: 800, fontFamily: 'Heebo, sans-serif', border: '2px solid #111' },
 }
