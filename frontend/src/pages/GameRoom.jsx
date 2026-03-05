@@ -46,7 +46,7 @@ function useIsMobile() {
 }
 
 export default function GameRoom() {
-  const { code } = useParams()
+  const { slug, code } = useParams()
   const navigate  = useNavigate()
   const isMobile  = useIsMobile()
 
@@ -232,8 +232,8 @@ export default function GameRoom() {
             )}
           </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button style={S.btn} onClick={() => navigate('/')}>🏠 דף הבית</button>
-            <button style={{ ...S.btn, background: 'linear-gradient(135deg, #f59e0b, #d97706)' }} onClick={() => navigate('/leaderboard')}>🏅 לוח מנחשים</button>
+            <button style={S.btn} onClick={() => navigate(`/${slug}`)}>🏠 דף הבית</button>
+            <button style={{ ...S.btn, background: 'linear-gradient(135deg, #f59e0b, #d97706)' }} onClick={() => navigate(`/${slug}/leaderboard`)}>🏅 לוח מנחשים</button>
           </div>
         </div>
       </div>
@@ -242,7 +242,7 @@ export default function GameRoom() {
 
   // ══════════════════ WAITING ══════════════════
   if (phase === 'waiting') return (
-    <WaitingScreen code={code} myName={myName} />
+    <WaitingScreen slug={slug} code={code} myName={myName} />
   )
 
   // ══════════════════ REVEAL SECRET ══════════════════
@@ -372,8 +372,8 @@ export default function GameRoom() {
                     alt={char.name}
                     style={{
                       width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block',
-                      filter: isMySecret ? 'blur(5px) brightness(0.65) saturate(0.4)' : 'none',
-                      transform: isMySecret ? 'scale(1.12)' : 'scale(1)',
+                      filter: 'none',
+                      transform: 'scale(1)',
                       transition: 'filter 0.3s, transform 0.3s',
                     }}
                     onError={e => { e.target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect fill="%23ddd" width="80" height="80"/></svg>' }}
@@ -580,9 +580,9 @@ function ChatMsg({ msg, isMobile }) {
 }
 
 // ══════════════════ WAITING SCREEN ══════════════════
-function WaitingScreen({ code, myName }) {
+function WaitingScreen({ slug, code, myName }) {
   const [copied, setCopied] = useState(false)
-  const shareUrl = `${window.location.origin}/join/${code}`
+  const shareUrl = `${window.location.origin}/${slug}/join/${code}`
 
   const copyLink = async () => {
     try {
@@ -595,7 +595,10 @@ function WaitingScreen({ code, myName }) {
     }
   }
 
-  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`בוא נשחק נחש לביא! לחץ כאן להצטרף: ${shareUrl}`)}`
+  const inviteText = myName
+    ? `${myName} מזמין אותך לשחק נחש מי! לחץ כאן להצטרף: ${shareUrl}`
+    : `בוא נשחק נחש מי! לחץ כאן להצטרף: ${shareUrl}`
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(inviteText)}`
 
   return (
     <div style={{

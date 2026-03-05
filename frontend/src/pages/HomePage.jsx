@@ -1,34 +1,38 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 
 export default function HomePage() {
-  const navigate = useNavigate()
-  const [mode, setMode]       = useState(null)
+  const { slug }  = useParams()
+  const navigate  = useNavigate()
+  const [gameName, setGameName] = useState('')
+  const [mode, setMode]         = useState(null)
   const [joinCode, setJoinCode] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState('')
   const [username, setUsername] = useState(() => sessionStorage.getItem('playerName') || '')
 
-  const saveName = (val) => {
-    setUsername(val)
-    sessionStorage.setItem('playerName', val.trim())
-  }
+  useEffect(() => {
+    axios.get(`/api/g/${slug}`)
+      .then(r => setGameName(r.data.name))
+      .catch(() => navigate('/'))   // unknown slug → back to index
+  }, [slug])
+
+  const saveName = (val) => { setUsername(val); sessionStorage.setItem('playerName', val.trim()) }
 
   const handleCreate = async () => {
     setLoading(true); setError('')
     try {
-      const res = await axios.post('/api/rooms', { username: username.trim() || undefined })
+      const res = await axios.post(`/api/g/${slug}/rooms`, { username: username.trim() || undefined })
       const { code, playerId, characters, secretCharacter } = res.data
-      sessionStorage.setItem('playerId', playerId)
-      sessionStorage.setItem('playerNum', '1')
-      sessionStorage.setItem('roomCode', code)
-      sessionStorage.setItem('characters', JSON.stringify(characters))
-      sessionStorage.setItem('secretCharacter', JSON.stringify(secretCharacter))
+      sessionStorage.setItem('playerId',         playerId)
+      sessionStorage.setItem('playerNum',        '1')
+      sessionStorage.setItem('roomCode',         code)
+      sessionStorage.setItem('characters',       JSON.stringify(characters))
+      sessionStorage.setItem('secretCharacter',  JSON.stringify(secretCharacter))
       sessionStorage.removeItem('opponentName')
-      navigate(`/room/${code}`)
-    } catch (e) {
-      setError(e.response?.data?.error || 'שגיאה ביצירת חדר')
+      navigate(`/${slug}/room/${code}`)
+    } catch (e) { setError(e.response?.data?.error || 'שגיאה ביצירת חדר')
     } finally { setLoading(false) }
   }
 
@@ -36,15 +40,15 @@ export default function HomePage() {
     if (joinCode.length !== 4) { setError('הכנס קוד בן 4 ספרות'); return }
     setLoading(true); setError('')
     try {
-      const res = await axios.post('/api/rooms/join', { code: joinCode, username: username.trim() || undefined })
-      sessionStorage.setItem('playerId', res.data.playerId)
-      sessionStorage.setItem('playerNum', '2')
-      sessionStorage.setItem('characters', JSON.stringify(res.data.characters))
+      const res = await axios.post(`/api/g/${slug}/rooms/join`, { code: joinCode, username: username.trim() || undefined })
+      sessionStorage.setItem('playerId',        res.data.playerId)
+      sessionStorage.setItem('playerNum',       '2')
+      sessionStorage.setItem('roomCode',        joinCode)
+      sessionStorage.setItem('characters',      JSON.stringify(res.data.characters))
       sessionStorage.setItem('secretCharacter', JSON.stringify(res.data.secretCharacter))
       if (res.data.opponentName) sessionStorage.setItem('opponentName', res.data.opponentName)
-      navigate(`/room/${joinCode}`)
-    } catch (e) {
-      setError(e.response?.data?.error || 'שגיאה בהצטרפות')
+      navigate(`/${slug}/room/${joinCode}`)
+    } catch (e) { setError(e.response?.data?.error || 'שגיאה בהצטרפות')
     } finally { setLoading(false) }
   }
 
@@ -54,19 +58,15 @@ export default function HomePage() {
 
       <div style={S.card} className="fade-in">
         <div className="float" style={{ fontSize: '3.5rem', lineHeight: 1, marginBottom: 8 }}>🃏</div>
-        <h1 style={S.title} className="gold-text">נחש לביא</h1>
+        <h1 style={S.title} className="gold-text">{gameName || '...'}</h1>
         <p style={S.subtitle}>משחק הדמויות המסתורית</p>
         <div style={S.divider} />
 
-        {/* Username input */}
+        {/* Username */}
         <div style={{ marginBottom: 16 }}>
           <input
-            style={S.nameInput}
-            type="text"
-            placeholder="השם שלך (אופציונלי)"
-            value={username}
-            onChange={e => saveName(e.target.value)}
-            maxLength={20}
+            style={S.nameInput} type="text" placeholder="השם שלך (אופציונלי)"
+            value={username} onChange={e => saveName(e.target.value)} maxLength={20}
           />
         </div>
 
@@ -78,9 +78,7 @@ export default function HomePage() {
             <div style={S.orRow}>
               <span style={S.orLine}/><span style={S.orText}>או</span><span style={S.orLine}/>
             </div>
-            <button style={S.btnSecondary} onClick={() => setMode('join')}>
-              🔑  הצטרף עם קוד
-            </button>
+            <button style={S.btnSecondary} onClick={() => setMode('join')}>🔑  הצטרף עם קוד</button>
             {error && <div style={S.error}>{error}</div>}
           </div>
         )}
@@ -89,13 +87,10 @@ export default function HomePage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <p style={{ color: '#6b7280', fontSize: '0.9rem', textAlign: 'center' }}>הכנס את הקוד שקיבלת</p>
             <input
-              style={S.codeInput}
-              type="text" inputMode="numeric" maxLength={4}
-              placeholder="0 0 0 0"
-              value={joinCode}
+              style={S.codeInput} type="text" inputMode="numeric" maxLength={4}
+              placeholder="0 0 0 0" value={joinCode}
               onChange={e => { setJoinCode(e.target.value.replace(/\D/g, '')); setError('') }}
-              onKeyDown={e => e.key === 'Enter' && handleJoin()}
-              autoFocus
+              onKeyDown={e => e.key === 'Enter' && handleJoin()} autoFocus
             />
             {error && <div style={S.error}>{error}</div>}
             <button className="btn-glow" style={S.btnPrimary} onClick={handleJoin} disabled={loading}>
@@ -106,13 +101,12 @@ export default function HomePage() {
         )}
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 16 }}>
-          <button style={S.bottomLink} onClick={() => navigate('/leaderboard')}>🏅 לוח מנחשים</button>
+          <button style={S.bottomLink} onClick={() => navigate(`/${slug}/leaderboard`)}>🏅 לוח מנחשים</button>
           <span style={{ color: '#d1d5db', fontSize: '0.78rem', alignSelf: 'center' }}>|</span>
-          <button style={S.adminLink} onClick={() => navigate('/admin')}>כניסת מנהל</button>
+          <button style={S.adminLink} onClick={() => navigate(`/${slug}/admin`)}>כניסת מנהל</button>
         </div>
       </div>
 
-      {/* Floating mini cards decoration */}
       <div style={S.decorRow}>
         {['👴','👵','🧑','👦','👧','🧔'].map((e, i) => (
           <div key={i} className="float" style={{ ...S.miniCard, animationDelay: `${i * 0.4}s` }}>{e}</div>
@@ -132,54 +126,21 @@ const S = {
   blob1: { position:'absolute', top:'-80px', right:'-80px', width:300, height:300, borderRadius:'50%', background:'rgba(139,92,246,0.2)', filter:'blur(60px)', pointerEvents:'none' },
   blob2: { position:'absolute', bottom:'80px', left:'-60px', width:250, height:250, borderRadius:'50%', background:'rgba(59,130,246,0.15)', filter:'blur(50px)', pointerEvents:'none' },
   blob3: { position:'absolute', top:'40%', left:'40%', width:200, height:200, borderRadius:'50%', background:'rgba(245,158,11,0.08)', filter:'blur(40px)', pointerEvents:'none' },
-
-  card: {
-    background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(20px)',
-    borderRadius: 28, padding: '36px 28px', maxWidth: 400, width: '100%',
-    boxShadow: '0 24px 64px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1)',
-    textAlign: 'center', position: 'relative', zIndex: 1,
-  },
-
+  card: { background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(20px)', borderRadius: 28, padding: '36px 28px', maxWidth: 400, width: '100%', boxShadow: '0 24px 64px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1)', textAlign: 'center', position: 'relative', zIndex: 1 },
   title:    { fontSize: '2.4rem', fontWeight: 900, letterSpacing: '-0.5px', fontFamily: 'Heebo, sans-serif', lineHeight: 1.1, marginBottom: 6 },
   subtitle: { color: '#6b7280', fontSize: '0.95rem', fontWeight: 500, marginBottom: 0 },
   divider:  { height: 2, background: 'linear-gradient(90deg, transparent, #ffd0d0, transparent)', margin: '20px 0', borderRadius: 2 },
-
-  nameInput: {
-    display: 'block', width: '100%', padding: '11px 16px',
-    border: '2px solid #ffd0d0', borderRadius: 14,
-    fontSize: '0.95rem', fontFamily: 'Heebo, sans-serif', color: '#1A202C',
-    textAlign: 'center', outline: 'none', direction: 'rtl',
-    boxSizing: 'border-box',
-  },
-
-  btnPrimary: {
-    display: 'block', width: '100%', padding: '14px 20px',
-    background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
-    color: 'white', border: 'none', borderRadius: 50,
-    fontSize: '1.05rem', fontWeight: 700, cursor: 'pointer',
-    fontFamily: 'Heebo, sans-serif', letterSpacing: '0.3px',
-  },
-  btnSecondary: {
-    display: 'block', width: '100%', padding: '13px 20px',
-    background: 'white', color: '#0056B3', border: '2px solid #0056B3', borderRadius: 50,
-    fontSize: '1rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Heebo, sans-serif',
-  },
+  nameInput: { display: 'block', width: '100%', padding: '11px 16px', border: '2px solid #ffd0d0', borderRadius: 14, fontSize: '0.95rem', fontFamily: 'Heebo, sans-serif', color: '#1A202C', textAlign: 'center', outline: 'none', direction: 'rtl', boxSizing: 'border-box' },
+  btnPrimary: { display: 'block', width: '100%', padding: '14px 20px', background: 'linear-gradient(135deg, #F20D0D, #C00A0A)', color: 'white', border: 'none', borderRadius: 50, fontSize: '1.05rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Heebo, sans-serif', letterSpacing: '0.3px' },
+  btnSecondary: { display: 'block', width: '100%', padding: '13px 20px', background: 'white', color: '#0056B3', border: '2px solid #0056B3', borderRadius: 50, fontSize: '1rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Heebo, sans-serif' },
   btnGhost: { display: 'block', width: '100%', padding: '10px', background: 'none', color: '#9ca3af', border: 'none', fontSize: '0.9rem', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' },
   orRow:  { display: 'flex', alignItems: 'center', gap: 10 },
   orLine: { flex: 1, height: 1, background: '#e5e7eb' },
   orText: { color: '#9ca3af', fontSize: '0.85rem', fontWeight: 500 },
-
-  codeInput: {
-    display: 'block', width: '100%', padding: '14px',
-    fontSize: '2rem', fontWeight: 700,
-    border: '2px solid #ffd0d0', borderRadius: 16, textAlign: 'center',
-    letterSpacing: '10px', outline: 'none', direction: 'ltr',
-    color: '#1A202C', fontFamily: 'Heebo, sans-serif',
-  },
-  error: { color: '#dc2626', background: '#fef2f2', borderRadius: 10, padding: '8px 12px', fontSize: '0.88rem', fontWeight: 500 },
+  codeInput: { display: 'block', width: '100%', padding: '14px', fontSize: '2rem', fontWeight: 700, border: '2px solid #ffd0d0', borderRadius: 16, textAlign: 'center', letterSpacing: '10px', outline: 'none', direction: 'ltr', color: '#1A202C', fontFamily: 'Heebo, sans-serif' },
+  error:    { color: '#dc2626', background: '#fef2f2', borderRadius: 10, padding: '8px 12px', fontSize: '0.88rem', fontWeight: 500 },
   bottomLink: { background: 'none', border: 'none', color: '#F20D0D', fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'Heebo, sans-serif', fontWeight: 600 },
-  adminLink: { background: 'none', border: 'none', color: '#d1d5db', fontSize: '0.78rem', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' },
-
+  adminLink:  { background: 'none', border: 'none', color: '#d1d5db', fontSize: '0.78rem', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' },
   decorRow: { position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 10, zIndex: 0 },
   miniCard: { width: 40, height: 52, background: 'rgba(255,255,255,0.12)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', boxShadow: '0 4px 12px rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.2)' },
 }

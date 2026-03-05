@@ -1,21 +1,22 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
 export default function Leaderboard() {
-  const navigate = useNavigate()
+  const { slug }  = useParams()
+  const navigate  = useNavigate()
   const [users,   setUsers]   = useState([])
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
 
   useEffect(() => {
-    axios.get('/api/leaderboard')
+    axios.get(`/api/g/${slug}/leaderboard`)
       .then(res => setUsers(res.data))
       .catch(() => setError('שגיאה בטעינת הנתונים'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [slug])
 
   const myName = sessionStorage.getItem('playerName') || ''
 
@@ -26,7 +27,7 @@ export default function Leaderboard() {
       <div style={S.container} className="fade-in">
         {/* Header */}
         <div style={S.header}>
-          <button style={S.backBtn} onClick={() => navigate('/')}>← חזור</button>
+          <button style={S.backBtn} onClick={() => navigate(`/${slug}`)}>← חזור</button>
           <h1 style={S.title}>🏅 לוח מנחשים</h1>
           <div style={{ width: 60 }} />
         </div>
@@ -55,7 +56,7 @@ export default function Leaderboard() {
               <p style={{ fontFamily: 'Heebo, sans-serif', fontSize: '0.9rem', color: '#999', marginTop: 6 }}>
                 הכנס שם לפני המשחק כדי שניצחונות יירשמו!
               </p>
-              <button style={S.btn} onClick={() => navigate('/')}>🎮 שחק עכשיו</button>
+              <button style={S.btn} onClick={() => navigate(`/${slug}`)}>🎮 שחק עכשיו</button>
             </div>
           )}
 
