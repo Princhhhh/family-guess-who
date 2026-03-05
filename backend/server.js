@@ -145,6 +145,27 @@ app.post('/api/super/games', superAdminAuth, (req, res) => {
   }
 });
 
+// Change admin password for a game
+app.patch('/api/super/games/:slug/password', superAdminAuth, (req, res) => {
+  const { password } = req.body;
+  if (!password || password.length < 3)
+    return res.status(400).json({ error: 'סיסמה חייבת להיות לפחות 3 תווים' });
+  const r = db.prepare('UPDATE games SET admin_password = ? WHERE slug = ?').run(password, req.params.slug);
+  if (r.changes === 0) return res.status(404).json({ error: 'משחק לא נמצא' });
+  res.json({ success: true });
+});
+
+// Delete a game and all its data
+app.delete('/api/super/games/:slug', superAdminAuth, (req, res) => {
+  const game = db.prepare('SELECT * FROM games WHERE slug = ?').get(req.params.slug);
+  if (!game) return res.status(404).json({ error: 'משחק לא נמצא' });
+  db.prepare('DELETE FROM characters  WHERE game_id = ?').run(game.id);
+  db.prepare('DELETE FROM rooms       WHERE game_id = ?').run(game.id);
+  db.prepare('DELETE FROM game_players WHERE game_id = ?').run(game.id);
+  db.prepare('DELETE FROM games       WHERE id = ?').run(game.id);
+  res.json({ success: true });
+});
+
 // Public: list games (for landing page — no passwords)
 app.get('/api/games', (req, res) => {
   const games = db.prepare('SELECT id, slug, name, created_at FROM games ORDER BY created_at ASC').all();

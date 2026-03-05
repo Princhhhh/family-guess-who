@@ -13,6 +13,7 @@ export default function SuperAdmin() {
   const [newGame, setNewGame] = useState({ slug: '', name: '', adminPassword: '' })
   const [creating, setCreating] = useState(false)
   const [msg,     setMsg]     = useState(null)
+  const [editPw,  setEditPw]  = useState({}) // slug → new password string
 
   const login = async () => {
     try {
@@ -26,6 +27,29 @@ export default function SuperAdmin() {
   const fetchGames = async (password = pw) => {
     const res = await axios.get('/api/super/games', { headers: SUPER_HDR(password) })
     setGames(res.data)
+  }
+
+  const deleteGame = async (g) => {
+    if (!window.confirm(`למחוק את "${g.name}" וכל הנתונים שלו?`)) return
+    try {
+      await axios.delete(`/api/super/games/${g.slug}`, { headers: SUPER_HDR(pw) })
+      setMsg({ type: 'ok', text: `"${g.name}" נמחק` })
+      fetchGames()
+    } catch (e) {
+      setMsg({ type: 'err', text: e.response?.data?.error || 'שגיאה במחיקה' })
+    }
+  }
+
+  const changePassword = async (slug) => {
+    const newPw = editPw[slug]?.trim()
+    if (!newPw) return
+    try {
+      await axios.patch(`/api/super/games/${slug}/password`, { password: newPw }, { headers: SUPER_HDR(pw) })
+      setMsg({ type: 'ok', text: 'סיסמה עודכנה' })
+      setEditPw(p => ({ ...p, [slug]: '' }))
+    } catch (e) {
+      setMsg({ type: 'err', text: e.response?.data?.error || 'שגיאה בעדכון סיסמה' })
+    }
   }
 
   const createGame = async () => {
@@ -79,18 +103,36 @@ export default function SuperAdmin() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {games.map(g => (
-                <div key={g.slug} style={S.gameRow}>
-                  <div>
-                    <div style={{ fontWeight: 800, fontFamily: 'Heebo, sans-serif', color: '#1f2937' }}>{g.name}</div>
-                    <div style={{ fontSize: '0.8rem', color: '#6b7280', fontFamily: 'Heebo, sans-serif' }}>
-                      /{g.slug} · {g.charCount} דמויות · {g.playerCount} שחקנים · {g.roomCount} משחקים שהסתיימו
+                <div key={g.slug} style={{ ...S.gameRow, flexDirection: 'column', alignItems: 'stretch', gap: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontWeight: 800, fontFamily: 'Heebo, sans-serif', color: '#1f2937' }}>{g.name}</div>
+                      <div style={{ fontSize: '0.8rem', color: '#6b7280', fontFamily: 'Heebo, sans-serif' }}>
+                        /{g.slug} · {g.charCount} דמויות · {g.playerCount} שחקנים · {g.roomCount} משחקים שהסתיימו
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      <button style={{ ...S.smallBtn, background: '#F20D0D' }} onClick={() => navigate(`/${g.slug}`)}>משחק</button>
+                      <button style={{ ...S.smallBtn, background: '#4338ca' }} onClick={() => navigate(`/${g.slug}/admin`)}>ניהול</button>
+                      <button style={{ ...S.smallBtn, background: '#0056B3' }} onClick={() => navigate(`/${g.slug}/leaderboard`)}>לוח</button>
+                      <button style={{ ...S.smallBtn, background: '#6b7280' }} onClick={() => setEditPw(p => ({ ...p, [g.slug]: p[g.slug] === undefined ? '' : undefined }))}>
+                        🔑 סיסמה
+                      </button>
+                      <button style={{ ...S.smallBtn, background: '#991b1b' }} onClick={() => deleteGame(g)}>🗑️ מחק</button>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button style={{ ...S.smallBtn, background: '#F20D0D' }} onClick={() => navigate(`/${g.slug}`)}>משחק</button>
-                    <button style={{ ...S.smallBtn, background: '#4338ca' }} onClick={() => navigate(`/${g.slug}/admin`)}>ניהול</button>
-                    <button style={{ ...S.smallBtn, background: '#0056B3' }} onClick={() => navigate(`/${g.slug}/leaderboard`)}>לוח</button>
-                  </div>
+                  {editPw[g.slug] !== undefined && (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input
+                        style={{ ...S.input, flex: 1, padding: '7px 12px', fontSize: '0.88rem' }}
+                        placeholder="סיסמה חדשה"
+                        value={editPw[g.slug]}
+                        onChange={e => setEditPw(p => ({ ...p, [g.slug]: e.target.value }))}
+                        onKeyDown={e => e.key === 'Enter' && changePassword(g.slug)}
+                      />
+                      <button style={{ ...S.smallBtn, background: '#16a34a', padding: '7px 14px' }} onClick={() => changePassword(g.slug)}>שמור</button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
